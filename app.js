@@ -1,8 +1,12 @@
 const storageKeys = {
-  products: "minifarmacia_v1_products",
-  customers: "minifarmacia_v1_customers",
-  sales: "minifarmacia_v1_sales",
-  movements: "minifarmacia_v1_movements",
+  products: "minifarmacia_crm_products",
+  customers: "minifarmacia_crm_customers",
+  orders: "minifarmacia_crm_orders",
+  payments: "minifarmacia_crm_payments",
+  shipments: "minifarmacia_crm_shipments",
+  sales: "minifarmacia_crm_sales",
+  conversations: "minifarmacia_crm_conversations",
+  settings: "minifarmacia_crm_settings",
 };
 
 const initialProducts = [
@@ -22,7 +26,7 @@ const initialProducts = [
     id: "prod-ibuprofeno-400",
     name: "Ibuprofeno 400 mg",
     category: "Dolor y fiebre",
-    description: "Antiinflamatorio de venta comun. Confirmar indicaciones antes de comprar.",
+    description: "Antiinflamatorio de venta comun.",
     price: 72,
     stock: 16,
     minStock: 10,
@@ -46,7 +50,7 @@ const initialProducts = [
     id: "prod-ambroxol-jarabe",
     name: "Ambroxol jarabe",
     category: "Respiratorio",
-    description: "Jarabe expectorante para apoyo respiratorio de uso familiar.",
+    description: "Jarabe expectorante de uso familiar.",
     price: 93,
     stock: 12,
     minStock: 10,
@@ -58,7 +62,7 @@ const initialProducts = [
     id: "prod-vitamina-c",
     name: "Vitamina C",
     category: "Vitaminas",
-    description: "Suplemento diario con tabletas efervescentes sabor naranja.",
+    description: "Tabletas efervescentes sabor naranja.",
     price: 118,
     stock: 34,
     minStock: 12,
@@ -70,7 +74,7 @@ const initialProducts = [
     id: "prod-amoxicilina-500",
     name: "Amoxicilina 500 mg",
     category: "Receta medica",
-    description: "Producto sujeto a validacion de receta antes de surtir.",
+    description: "Producto sujeto a validacion de receta.",
     price: 185,
     stock: 9,
     minStock: 10,
@@ -90,7 +94,7 @@ const initialCustomers = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: "cust-paciente-nl",
+    id: "cust-nuevo-leon",
     name: "Paciente Nuevo Leon",
     phone: "81 1500 9000",
     email: "paciente@correo.com",
@@ -99,29 +103,52 @@ const initialCustomers = [
   },
 ];
 
+const initialConversations = [
+  {
+    id: "conv-laura",
+    customerName: "Laura Martinez",
+    phone: "81 2200 1840",
+    status: "Liga enviada",
+    lastMessage: "Hola, quiero revisar medicamentos para fiebre.",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 const state = {
   products: readJSON(storageKeys.products, initialProducts),
   customers: readJSON(storageKeys.customers, initialCustomers),
+  orders: readJSON(storageKeys.orders, []),
+  payments: readJSON(storageKeys.payments, []),
+  shipments: readJSON(storageKeys.shipments, []),
   sales: readJSON(storageKeys.sales, []),
-  movements: readJSON(storageKeys.movements, []),
-  saleCart: [],
+  conversations: readJSON(storageKeys.conversations, initialConversations),
+  settings: readJSON(storageKeys.settings, {
+    storeLink: "https://mixteko.github.io/Minifarmacia/",
+    businessPhone: "5218112345678",
+    welcomeMessage:
+      "Gracias por visitar Mini Farmacia. Puedes comprar en esta liga: {{liga}}. Registrate para guardar tus datos de entrega y dar seguimiento a tu pedido.",
+  }),
+  storeCart: [],
   productQuery: "",
   customerQuery: "",
+  storeQuery: "",
+  storeCategory: "Todas",
 };
 
 const viewTitles = {
-  dashboard: "Dashboard",
-  productos: "Productos",
-  inventario: "Inventario",
-  ventas: "Ventas",
+  dashboard: "Inicio",
+  whatsapp: "WhatsApp",
+  tienda: "Tienda online",
   clientes: "Clientes",
+  pedidos: "Pedidos",
+  productos: "Productos",
+  ventas: "Ventas",
+  envios: "Envios",
+  cobros: "Cobros",
 };
 
-const currency = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
-
+const orderColumns = ["Nuevo", "Por cobrar", "Por enviar", "Enviado", "Completado"];
+const currency = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 
@@ -129,15 +156,56 @@ const elements = {
   viewTitle: $("#viewTitle"),
   todayLabel: $("#todayLabel"),
   toast: $("#toast"),
+  metricOpenOrders: $("#metricOpenOrders"),
+  metricPendingPayments: $("#metricPendingPayments"),
   metricSalesToday: $("#metricSalesToday"),
   metricSalesCount: $("#metricSalesCount"),
+  metricShipments: $("#metricShipments"),
+  metricNationalShipments: $("#metricNationalShipments"),
   metricProducts: $("#metricProducts"),
   metricLowStock: $("#metricLowStock"),
-  metricCustomers: $("#metricCustomers"),
-  metricNewCustomers: $("#metricNewCustomers"),
-  metricInventoryValue: $("#metricInventoryValue"),
+  navOrdersBadge: $("#navOrdersBadge"),
+  dashboardOrders: $("#dashboardOrders"),
   dashboardAlerts: $("#dashboardAlerts"),
-  dashboardSales: $("#dashboardSales"),
+  chatLog: $("#chatLog"),
+  chatForm: $("#chatForm"),
+  incomingMessage: $("#incomingMessage"),
+  storeLink: $("#storeLink"),
+  businessPhone: $("#businessPhone"),
+  welcomeMessage: $("#welcomeMessage"),
+  copyWelcomeButton: $("#copyWelcomeButton"),
+  conversationList: $("#conversationList"),
+  storeSearch: $("#storeSearch"),
+  storeCategory: $("#storeCategory"),
+  storeProductGrid: $("#storeProductGrid"),
+  storeLoginButton: $("#storeLoginButton"),
+  storeCartList: $("#storeCartList"),
+  clearStoreCartButton: $("#clearStoreCartButton"),
+  storeCheckoutForm: $("#storeCheckoutForm"),
+  storeCustomer: $("#storeCustomer"),
+  storeDeliveryType: $("#storeDeliveryType"),
+  storeAddress: $("#storeAddress"),
+  storePaymentMethod: $("#storePaymentMethod"),
+  storeSubtotal: $("#storeSubtotal"),
+  storeShipping: $("#storeShipping"),
+  storeTotal: $("#storeTotal"),
+  customerDialog: $("#customerDialog"),
+  storeCustomerForm: $("#storeCustomerForm"),
+  storeRegisterName: $("#storeRegisterName"),
+  storeRegisterPhone: $("#storeRegisterPhone"),
+  storeRegisterEmail: $("#storeRegisterEmail"),
+  storeRegisterAddress: $("#storeRegisterAddress"),
+  customerForm: $("#customerForm"),
+  customerFormTitle: $("#customerFormTitle"),
+  customerId: $("#customerId"),
+  customerName: $("#customerName"),
+  customerPhone: $("#customerPhone"),
+  customerEmail: $("#customerEmail"),
+  customerAddress: $("#customerAddress"),
+  customerSearch: $("#customerSearch"),
+  customerCards: $("#customerCards"),
+  clearCustomerForm: $("#clearCustomerForm"),
+  ordersBoard: $("#ordersBoard"),
   productForm: $("#productForm"),
   productFormTitle: $("#productFormTitle"),
   productId: $("#productId"),
@@ -153,36 +221,9 @@ const elements = {
   productSearch: $("#productSearch"),
   productTable: $("#productTable"),
   clearProductForm: $("#clearProductForm"),
-  inventoryForm: $("#inventoryForm"),
-  inventoryProduct: $("#inventoryProduct"),
-  inventoryType: $("#inventoryType"),
-  inventoryQuantity: $("#inventoryQuantity"),
-  inventoryReason: $("#inventoryReason"),
-  inventoryTable: $("#inventoryTable"),
-  movementList: $("#movementList"),
-  saleItemForm: $("#saleItemForm"),
-  saleProduct: $("#saleProduct"),
-  saleQuantity: $("#saleQuantity"),
-  saleDiscount: $("#saleDiscount"),
-  saleCartList: $("#saleCartList"),
-  clearSaleButton: $("#clearSaleButton"),
-  saleCheckoutForm: $("#saleCheckoutForm"),
-  saleCustomer: $("#saleCustomer"),
-  salePayment: $("#salePayment"),
-  saleSubtotal: $("#saleSubtotal"),
-  saleDiscountTotal: $("#saleDiscountTotal"),
-  saleTotal: $("#saleTotal"),
   salesTable: $("#salesTable"),
-  customerForm: $("#customerForm"),
-  customerFormTitle: $("#customerFormTitle"),
-  customerId: $("#customerId"),
-  customerName: $("#customerName"),
-  customerPhone: $("#customerPhone"),
-  customerEmail: $("#customerEmail"),
-  customerAddress: $("#customerAddress"),
-  customerSearch: $("#customerSearch"),
-  customerCards: $("#customerCards"),
-  clearCustomerForm: $("#clearCustomerForm"),
+  shipmentsTable: $("#shipmentsTable"),
+  paymentsTable: $("#paymentsTable"),
   resetDemoButton: $("#resetDemoButton"),
 };
 
@@ -190,7 +231,9 @@ init();
 
 function init() {
   elements.todayLabel.textContent = `Operacion local - ${formatShortDate(new Date().toISOString())}`;
+  hydrateSettings();
   bindEvents();
+  seedChat();
   renderAll();
 }
 
@@ -200,17 +243,25 @@ function bindEvents() {
   });
 
   elements.resetDemoButton.addEventListener("click", resetDemoData);
-  elements.productForm.addEventListener("submit", saveProduct);
-  elements.clearProductForm.addEventListener("click", clearProductForm);
-  elements.productSearch.addEventListener("input", (event) => {
-    state.productQuery = event.target.value.trim().toLowerCase();
-    renderProducts();
-  });
+  elements.chatForm.addEventListener("submit", simulateIncomingMessage);
+  elements.copyWelcomeButton.addEventListener("click", copyWelcomeMessage);
+  [elements.storeLink, elements.businessPhone].forEach((input) => input.addEventListener("input", saveSettings));
+  elements.welcomeMessage.addEventListener("input", saveSettings);
 
-  elements.inventoryForm.addEventListener("submit", saveInventoryMovement);
-  elements.saleItemForm.addEventListener("submit", addSaleItem);
-  elements.clearSaleButton.addEventListener("click", clearSale);
-  elements.saleCheckoutForm.addEventListener("submit", confirmSale);
+  elements.storeSearch.addEventListener("input", (event) => {
+    state.storeQuery = event.target.value.trim().toLowerCase();
+    renderStore();
+  });
+  elements.storeCategory.addEventListener("change", (event) => {
+    state.storeCategory = event.target.value;
+    renderStore();
+  });
+  elements.storeLoginButton.addEventListener("click", () => elements.customerDialog.showModal());
+  elements.clearStoreCartButton.addEventListener("click", clearStoreCart);
+  elements.storeDeliveryType.addEventListener("change", renderStoreCart);
+  elements.storeCustomer.addEventListener("change", fillStoreCustomerAddress);
+  elements.storeCheckoutForm.addEventListener("submit", createOnlineOrder);
+  elements.storeCustomerForm.addEventListener("submit", saveStoreCustomer);
 
   elements.customerForm.addEventListener("submit", saveCustomer);
   elements.clearCustomerForm.addEventListener("click", clearCustomerForm);
@@ -219,16 +270,29 @@ function bindEvents() {
     renderCustomers();
   });
 
-  document.addEventListener("click", (event) => {
-    const action = event.target.closest("[data-action]");
-    if (!action) return;
-
-    const id = action.dataset.id;
-    if (action.dataset.action === "edit-product") editProduct(id);
-    if (action.dataset.action === "toggle-product") toggleProduct(id);
-    if (action.dataset.action === "edit-customer") editCustomer(id);
-    if (action.dataset.action === "remove-sale-item") removeSaleItem(id);
+  elements.productForm.addEventListener("submit", saveProduct);
+  elements.clearProductForm.addEventListener("click", clearProductForm);
+  elements.productSearch.addEventListener("input", (event) => {
+    state.productQuery = event.target.value.trim().toLowerCase();
+    renderProducts();
   });
+
+  document.addEventListener("click", handleDocumentAction);
+}
+
+function handleDocumentAction(event) {
+  const action = event.target.closest("[data-action]");
+  if (!action) return;
+
+  const id = action.dataset.id;
+  if (action.dataset.action === "add-store-item") addStoreItem(id);
+  if (action.dataset.action === "remove-store-item") removeStoreItem(id);
+  if (action.dataset.action === "edit-customer") editCustomer(id);
+  if (action.dataset.action === "edit-product") editProduct(id);
+  if (action.dataset.action === "toggle-product") toggleProduct(id);
+  if (action.dataset.action === "order-next") moveOrderNext(id);
+  if (action.dataset.action === "mark-paid") markPaymentPaid(id);
+  if (action.dataset.action === "mark-shipped") markShipmentSent(id);
 }
 
 function showView(viewId) {
@@ -238,409 +302,305 @@ function showView(viewId) {
   elements.viewTitle.textContent = viewTitles[viewId];
 }
 
+function hydrateSettings() {
+  elements.storeLink.value = state.settings.storeLink;
+  elements.businessPhone.value = state.settings.businessPhone;
+  elements.welcomeMessage.value = state.settings.welcomeMessage;
+}
+
 function renderAll() {
   renderDashboard();
-  renderProducts();
-  renderInventory();
-  renderSales();
+  renderConversations();
+  renderStore();
   renderCustomers();
-  renderSelects();
+  renderOrders();
+  renderProducts();
+  renderSales();
+  renderShipments();
+  renderPayments();
+  renderCustomerSelects();
 }
 
 function renderDashboard() {
   const today = new Date().toDateString();
+  const openOrders = state.orders.filter((order) => order.status !== "Completado");
+  const pendingPayments = state.payments.filter((payment) => payment.status !== "Pagado");
   const todaySales = state.sales.filter((sale) => new Date(sale.createdAt).toDateString() === today);
   const salesTotal = todaySales.reduce((total, sale) => total + sale.total, 0);
-  const lowStockProducts = state.products.filter((product) => product.stock <= product.minStock);
-  const inventoryValue = state.products.reduce((total, product) => total + product.price * product.stock, 0);
-  const newCustomers = state.customers.filter((customer) => new Date(customer.createdAt).toDateString() === today);
+  const activeShipments = state.shipments.filter((shipment) => shipment.status !== "Entregado");
+  const nationalShipments = activeShipments.filter((shipment) => shipment.type === "Nacional");
+  const lowStock = state.products.filter((product) => product.stock <= product.minStock);
 
+  elements.metricOpenOrders.textContent = String(openOrders.length);
+  elements.metricPendingPayments.textContent = `${pendingPayments.length} por cobrar`;
   elements.metricSalesToday.textContent = currency.format(salesTotal);
   elements.metricSalesCount.textContent = `${todaySales.length} tickets`;
+  elements.metricShipments.textContent = String(activeShipments.length);
+  elements.metricNationalShipments.textContent = `${nationalShipments.length} nacionales`;
   elements.metricProducts.textContent = String(state.products.filter((product) => product.status === "Activo").length);
-  elements.metricLowStock.textContent = `${lowStockProducts.length} con stock bajo`;
-  elements.metricCustomers.textContent = String(state.customers.length);
-  elements.metricNewCustomers.textContent = `${newCustomers.length} nuevos`;
-  elements.metricInventoryValue.textContent = currency.format(inventoryValue);
+  elements.metricLowStock.textContent = `${lowStock.length} con stock bajo`;
+  if (elements.navOrdersBadge) elements.navOrdersBadge.textContent = String(openOrders.length);
 
-  elements.dashboardAlerts.innerHTML = lowStockProducts.length
-    ? lowStockProducts
-        .slice(0, 6)
-        .map((product) => listRow(product.name, `${product.stock} disponibles - minimo ${product.minStock}`, stockStatus(product).label))
-        .join("")
-    : emptyState("Sin alertas de inventario.");
+  elements.dashboardOrders.innerHTML = state.orders.length
+    ? state.orders.slice(0, 5).map((order) => listRow(order.id, `${order.customerName} - ${order.status}`, currency.format(order.total))).join("")
+    : emptyState("Aun no hay pedidos.");
 
-  elements.dashboardSales.innerHTML = state.sales.length
-    ? state.sales
-        .slice(0, 6)
-        .map((sale) => listRow(sale.id, `${sale.customerName} - ${sale.paymentMethod}`, currency.format(sale.total)))
-        .join("")
-    : emptyState("Aun no hay ventas registradas.");
+  elements.dashboardAlerts.innerHTML = lowStock.length
+    ? lowStock.map((product) => listRow(product.name, `${product.stock} disponibles`, "Stock bajo")).join("")
+    : emptyState("Sin alertas por ahora.");
 }
 
-function renderProducts() {
-  const products = state.products.filter((product) => {
-    const text = `${product.name} ${product.category} ${product.type} ${product.status}`.toLowerCase();
-    return text.includes(state.productQuery);
-  });
-
-  elements.productTable.innerHTML = products.length
-    ? products
-        .map((product) => {
-          const status = stockStatus(product);
-          return `
-            <tr>
-              <td>
-                <strong>${escapeHTML(product.name)}</strong>
-                <span>${escapeHTML(product.description || "Sin descripcion")}</span>
-              </td>
-              <td>${escapeHTML(product.category)}</td>
-              <td>${currency.format(product.price)}</td>
-              <td>
-                <strong>${product.stock}</strong>
-                <span>${escapeHTML(status.label)}</span>
-              </td>
-              <td><span class="badge ${product.type === "Receta medica" ? "danger" : "success"}">${escapeHTML(product.type)}</span></td>
-              <td>
-                <div class="table-actions">
-                  <button class="ghost-button small" type="button" data-action="edit-product" data-id="${product.id}">Editar</button>
-                  <button class="ghost-button small" type="button" data-action="toggle-product" data-id="${product.id}">
-                    ${product.status === "Activo" ? "Pausar" : "Activar"}
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `;
-        })
-        .join("")
-    : tableEmpty(6, "No hay productos con ese filtro.");
+function seedChat() {
+  elements.chatLog.innerHTML = "";
+  addBubble("customer", "Hola, quiero comprar medicamentos");
+  addBubble("business", buildWelcomeMessage());
 }
 
-function saveProduct(event) {
+function simulateIncomingMessage(event) {
   event.preventDefault();
+  const message = elements.incomingMessage.value.trim();
+  if (!message) return;
 
-  const id = elements.productId.value || createId("prod");
-  const price = toNumber(elements.productPrice.value);
-  const stock = toInteger(elements.productStock.value);
-  const minStock = toInteger(elements.productMinStock.value);
-  const maxStock = toInteger(elements.productMaxStock.value);
-
-  if (price < 0 || stock < 0 || minStock < 0 || maxStock < 0) {
-    showToast("Los valores numericos no pueden ser negativos");
-    return;
-  }
-
-  if (minStock > maxStock) {
-    showToast("El stock minimo no puede ser mayor al maximo");
-    return;
-  }
-
-  if (stock > maxStock) {
-    showToast("El stock actual no puede superar el maximo");
-    return;
-  }
-
-  const product = {
-    id,
-    name: elements.productName.value.trim(),
-    category: elements.productCategory.value.trim(),
-    description: elements.productDescription.value.trim(),
-    price,
-    stock,
-    minStock,
-    maxStock,
-    type: elements.productType.value,
-    status: elements.productStatus.value,
-  };
-
-  const existingIndex = state.products.findIndex((item) => item.id === id);
-  if (existingIndex >= 0) state.products[existingIndex] = product;
-  else state.products.unshift(product);
-
-  persist(storageKeys.products, state.products);
-  clearProductForm();
-  renderAll();
-  showToast("Producto guardado");
-}
-
-function editProduct(id) {
-  const product = getProduct(id);
-  if (!product) return;
-
-  elements.productFormTitle.textContent = "Editar producto";
-  elements.productId.value = product.id;
-  elements.productName.value = product.name;
-  elements.productCategory.value = product.category;
-  elements.productPrice.value = product.price;
-  elements.productStock.value = product.stock;
-  elements.productMinStock.value = product.minStock;
-  elements.productMaxStock.value = product.maxStock;
-  elements.productType.value = product.type;
-  elements.productStatus.value = product.status;
-  elements.productDescription.value = product.description || "";
-  showView("productos");
-}
-
-function toggleProduct(id) {
-  const product = getProduct(id);
-  if (!product) return;
-  product.status = product.status === "Activo" ? "Pausado" : "Activo";
-  persist(storageKeys.products, state.products);
-  renderAll();
-  showToast(`Producto ${product.status.toLowerCase()}`);
-}
-
-function clearProductForm() {
-  elements.productForm.reset();
-  elements.productId.value = "";
-  elements.productFormTitle.textContent = "Nuevo producto";
-  elements.productMinStock.value = 5;
-  elements.productMaxStock.value = 50;
-}
-
-function renderInventory() {
-  elements.inventoryTable.innerHTML = state.products.length
-    ? state.products
-        .map((product) => {
-          const status = stockStatus(product);
-          return `
-            <tr>
-              <td><strong>${escapeHTML(product.name)}</strong><span>${escapeHTML(product.category)}</span></td>
-              <td>${product.stock}</td>
-              <td>${product.minStock}</td>
-              <td>${product.maxStock}</td>
-              <td><span class="badge ${status.className}">${escapeHTML(status.label)}</span></td>
-            </tr>
-          `;
-        })
-        .join("")
-    : tableEmpty(5, "No hay productos para controlar.");
-
-  elements.movementList.innerHTML = state.movements.length
-    ? state.movements
-        .slice(0, 10)
-        .map((movement) => {
-          const product = getProduct(movement.productId);
-          return listRow(
-            product?.name || "Producto eliminado",
-            `${movement.type} - ${movement.quantity} unidades - ${movement.reason || "Sin motivo"}`,
-            formatShortDate(movement.createdAt),
-          );
-        })
-        .join("")
-    : emptyState("Aun no hay movimientos registrados.");
-}
-
-function saveInventoryMovement(event) {
-  event.preventDefault();
-
-  const product = getProduct(elements.inventoryProduct.value);
-  const quantity = toInteger(elements.inventoryQuantity.value);
-  const type = elements.inventoryType.value;
-  const reason = elements.inventoryReason.value.trim();
-
-  if (!product) {
-    showToast("Selecciona un producto");
-    return;
-  }
-
-  if (quantity < 0) {
-    showToast("La cantidad no puede ser negativa");
-    return;
-  }
-
-  let nextStock = product.stock;
-  if (type === "entrada") nextStock += quantity;
-  if (type === "salida") nextStock -= quantity;
-  if (type === "ajuste") nextStock = quantity;
-
-  if (nextStock < 0) {
-    showToast("No se permite stock negativo");
-    return;
-  }
-
-  if (nextStock > product.maxStock) {
-    showToast("La existencia supera el stock maximo configurado");
-    return;
-  }
-
-  product.stock = nextStock;
-  state.movements.unshift({
-    id: createId("mov"),
-    productId: product.id,
-    type,
-    quantity,
-    reason,
+  addBubble("customer", message);
+  addBubble("business", buildWelcomeMessage());
+  state.conversations.unshift({
+    id: createId("conv"),
+    customerName: "Cliente WhatsApp",
+    phone: "Por identificar",
+    status: "Liga enviada",
+    lastMessage: message,
     createdAt: new Date().toISOString(),
   });
-
-  persist(storageKeys.products, state.products);
-  persist(storageKeys.movements, state.movements);
-  elements.inventoryForm.reset();
-  renderAll();
-  showToast("Movimiento registrado");
+  persist(storageKeys.conversations, state.conversations);
+  elements.incomingMessage.value = "";
+  renderConversations();
 }
 
-function renderSales() {
-  renderSaleCart();
-  elements.salesTable.innerHTML = state.sales.length
-    ? state.sales
+function addBubble(type, message) {
+  const node = document.createElement("div");
+  node.className = `bubble ${type}`;
+  node.innerHTML = `${escapeHTML(message).replaceAll("\n", "<br>")}<time>${formatTime(new Date().toISOString())}</time>`;
+  elements.chatLog.appendChild(node);
+  elements.chatLog.scrollTop = elements.chatLog.scrollHeight;
+}
+
+function buildWelcomeMessage() {
+  return elements.welcomeMessage.value.trim().replaceAll("{{liga}}", elements.storeLink.value.trim());
+}
+
+async function copyWelcomeMessage() {
+  await navigator.clipboard.writeText(buildWelcomeMessage());
+  showToast("Respuesta copiada");
+}
+
+function saveSettings() {
+  state.settings = {
+    storeLink: elements.storeLink.value.trim(),
+    businessPhone: elements.businessPhone.value.trim(),
+    welcomeMessage: elements.welcomeMessage.value.trim(),
+  };
+  persist(storageKeys.settings, state.settings);
+}
+
+function renderConversations() {
+  elements.conversationList.innerHTML = state.conversations.length
+    ? state.conversations
+        .slice(0, 8)
+        .map((conversation) => listRow(conversation.customerName, conversation.lastMessage, conversation.status))
+        .join("")
+    : emptyState("Sin conversaciones.");
+}
+
+function renderStore() {
+  const categories = ["Todas", ...new Set(state.products.map((product) => product.category))];
+  elements.storeCategory.innerHTML = categories
+    .map((category) => `<option value="${escapeHTML(category)}">${escapeHTML(category)}</option>`)
+    .join("");
+  elements.storeCategory.value = state.storeCategory;
+
+  const products = state.products.filter((product) => {
+    const matchesCategory = state.storeCategory === "Todas" || product.category === state.storeCategory;
+    const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
+    return product.status === "Activo" && matchesCategory && text.includes(state.storeQuery);
+  });
+
+  elements.storeProductGrid.innerHTML = products.length
+    ? products
         .map(
-          (sale) => `
-            <tr>
-              <td><strong>${escapeHTML(sale.id)}</strong><span>${sale.items.length} productos</span></td>
-              <td>${escapeHTML(sale.customerName)}</td>
-              <td>${escapeHTML(sale.paymentMethod)}</td>
-              <td>${currency.format(sale.total)}</td>
-              <td>${formatShortDate(sale.createdAt)}</td>
-            </tr>
+          (product) => `
+            <article class="product-card">
+              <div class="product-visual"><span>${escapeHTML(product.type)}</span></div>
+              <div>
+                <p class="product-category">${escapeHTML(product.category)}</p>
+                <h3>${escapeHTML(product.name)}</h3>
+                <p>${escapeHTML(product.description)}</p>
+              </div>
+              <div class="product-actions">
+                <strong>${currency.format(product.price)}</strong>
+                <button class="primary-button small" type="button" data-action="add-store-item" data-id="${product.id}" ${product.stock <= 0 ? "disabled" : ""}>
+                  Agregar
+                </button>
+              </div>
+            </article>
           `,
         )
         .join("")
-    : tableEmpty(5, "No hay ventas registradas.");
+    : emptyState("No hay productos disponibles.");
+
+  renderStoreCart();
 }
 
-function addSaleItem(event) {
-  event.preventDefault();
+function addStoreItem(productId) {
+  const product = getProduct(productId);
+  if (!product || product.stock <= 0) return showToast("Producto sin existencia");
 
-  const product = getProduct(elements.saleProduct.value);
-  const quantity = toInteger(elements.saleQuantity.value);
-  const discount = toNumber(elements.saleDiscount.value);
+  const line = state.storeCart.find((item) => item.productId === productId);
+  const currentQuantity = line?.quantity || 0;
+  if (currentQuantity + 1 > product.stock) return showToast("No hay mas existencia disponible");
 
-  if (!product || product.status !== "Activo") {
-    showToast("Selecciona un producto activo");
-    return;
-  }
-
-  if (quantity <= 0) {
-    showToast("La cantidad debe ser mayor a cero");
-    return;
-  }
-
-  if (discount < 0) {
-    showToast("El descuento no puede ser negativo");
-    return;
-  }
-
-  const existingQuantity = state.saleCart
-    .filter((item) => item.productId === product.id)
-    .reduce((total, item) => total + item.quantity, 0);
-
-  if (existingQuantity + quantity > product.stock) {
-    showToast("No hay suficiente existencia para esta venta");
-    return;
-  }
-
-  state.saleCart.push({
-    lineId: createId("line"),
-    productId: product.id,
-    name: product.name,
-    price: product.price,
-    quantity,
-    discount,
-  });
-
-  elements.saleItemForm.reset();
-  elements.saleQuantity.value = 1;
-  elements.saleDiscount.value = 0;
-  renderSaleCart();
-  showToast("Producto agregado al ticket");
+  if (line) line.quantity += 1;
+  else state.storeCart.push({ lineId: createId("cart"), productId, quantity: 1 });
+  renderStoreCart();
 }
 
-function renderSaleCart() {
-  const totals = saleTotals();
-  elements.saleCartList.innerHTML = state.saleCart.length
-    ? state.saleCart
-        .map(
-          (item) => `
+function removeStoreItem(lineId) {
+  state.storeCart = state.storeCart.filter((item) => item.lineId !== lineId);
+  renderStoreCart();
+}
+
+function clearStoreCart() {
+  state.storeCart = [];
+  renderStoreCart();
+}
+
+function renderStoreCart() {
+  const totals = storeTotals();
+  elements.storeCartList.innerHTML = state.storeCart.length
+    ? state.storeCart
+        .map((item) => {
+          const product = getProduct(item.productId);
+          return `
             <div class="ticket-line">
               <div>
-                <strong>${escapeHTML(item.name)}</strong>
-                <span>${item.quantity} x ${currency.format(item.price)} - desc. ${currency.format(item.discount)}</span>
+                <strong>${escapeHTML(product.name)}</strong>
+                <span>${item.quantity} x ${currency.format(product.price)}</span>
               </div>
-              <button class="ghost-button small" type="button" data-action="remove-sale-item" data-id="${item.lineId}">Quitar</button>
+              <button class="ghost-button small" type="button" data-action="remove-store-item" data-id="${item.lineId}">Quitar</button>
             </div>
-          `,
-        )
+          `;
+        })
         .join("")
-    : emptyState("Agrega productos para iniciar una venta.");
+    : emptyState("El carrito esta vacio.");
 
-  elements.saleSubtotal.textContent = currency.format(totals.subtotal);
-  elements.saleDiscountTotal.textContent = currency.format(totals.discount);
-  elements.saleTotal.textContent = currency.format(totals.total);
+  elements.storeSubtotal.textContent = currency.format(totals.subtotal);
+  elements.storeShipping.textContent = totals.shipping === 0 ? "Gratis" : currency.format(totals.shipping);
+  elements.storeTotal.textContent = currency.format(totals.total);
 }
 
-function removeSaleItem(lineId) {
-  state.saleCart = state.saleCart.filter((item) => item.lineId !== lineId);
-  renderSaleCart();
+function fillStoreCustomerAddress() {
+  const customer = getCustomer(elements.storeCustomer.value);
+  if (customer && !elements.storeAddress.value.trim()) elements.storeAddress.value = customer.address || "";
 }
 
-function clearSale() {
-  state.saleCart = [];
-  renderSaleCart();
-  showToast("Ticket vacio");
-}
-
-function confirmSale(event) {
-  event.preventDefault();
-
-  if (!state.saleCart.length) {
-    showToast("Agrega productos antes de confirmar");
-    return;
-  }
-
-  for (const item of state.saleCart) {
+function storeTotals() {
+  const subtotal = state.storeCart.reduce((total, item) => {
     const product = getProduct(item.productId);
-    if (!product || product.stock < item.quantity) {
-      showToast(`Stock insuficiente para ${item.name}`);
-      return;
-    }
+    return total + product.price * item.quantity;
+  }, 0);
+  const shipping = subtotal === 0 || subtotal >= 999 ? 0 : elements.storeDeliveryType.value === "Nacional" ? 149 : 49;
+  return { subtotal, shipping, total: subtotal + shipping };
+}
+
+function createOnlineOrder(event) {
+  event.preventDefault();
+  if (!state.storeCart.length) return showToast("Agrega productos antes de generar pedido");
+
+  const customer = getCustomer(elements.storeCustomer.value);
+  if (!customer) return showToast("Selecciona o registra un cliente");
+
+  for (const item of state.storeCart) {
+    const product = getProduct(item.productId);
+    if (!product || product.stock < item.quantity) return showToast(`Stock insuficiente: ${item.productId}`);
   }
 
-  const totals = saleTotals();
-  const customer = getCustomer(elements.saleCustomer.value);
-  const sale = {
-    id: `VT-${Date.now().toString().slice(-6)}`,
-    customerId: customer?.id || "",
-    customerName: customer?.name || "Venta mostrador",
-    paymentMethod: elements.salePayment.value,
-    items: state.saleCart.map((item) => ({ ...item })),
+  const totals = storeTotals();
+  const order = {
+    id: `PD-${Date.now().toString().slice(-6)}`,
+    customerId: customer.id,
+    customerName: customer.name,
+    status: elements.storePaymentMethod.value === "Pendiente" ? "Por cobrar" : "Por enviar",
+    deliveryType: elements.storeDeliveryType.value,
+    address: elements.storeAddress.value.trim(),
+    paymentMethod: elements.storePaymentMethod.value,
     subtotal: totals.subtotal,
-    discount: totals.discount,
+    shipping: totals.shipping,
     total: totals.total,
+    items: state.storeCart.map((item) => {
+      const product = getProduct(item.productId);
+      return { productId: product.id, name: product.name, quantity: item.quantity, price: product.price };
+    }),
     createdAt: new Date().toISOString(),
   };
 
-  sale.items.forEach((item) => {
+  order.items.forEach((item) => {
     const product = getProduct(item.productId);
     product.stock -= item.quantity;
-    state.movements.unshift({
-      id: createId("mov"),
-      productId: product.id,
-      type: "salida",
-      quantity: item.quantity,
-      reason: `Venta ${sale.id}`,
-      createdAt: sale.createdAt,
-    });
   });
 
-  state.sales.unshift(sale);
-  state.saleCart = [];
-  persist(storageKeys.products, state.products);
-  persist(storageKeys.sales, state.sales);
-  persist(storageKeys.movements, state.movements);
+  const payment = {
+    id: createId("pay"),
+    orderId: order.id,
+    customerName: order.customerName,
+    method: order.paymentMethod,
+    total: order.total,
+    status: order.paymentMethod === "Pendiente" ? "Pendiente" : "Pagado",
+    createdAt: order.createdAt,
+  };
+
+  const shipment = {
+    id: createId("ship"),
+    orderId: order.id,
+    customerName: order.customerName,
+    type: order.deliveryType,
+    address: order.address,
+    status: payment.status === "Pagado" ? "Preparando" : "Esperando pago",
+    createdAt: order.createdAt,
+  };
+
+  state.orders.unshift(order);
+  state.payments.unshift(payment);
+  state.shipments.unshift(shipment);
+  if (payment.status === "Pagado") createSaleFromOrder(order, payment);
+  state.storeCart = [];
+  persistAll();
+  elements.storeCheckoutForm.reset();
   renderAll();
-  showToast(`Venta ${sale.id} confirmada`);
+  showToast(`Pedido ${order.id} generado`);
 }
 
-function saleTotals() {
-  const subtotal = state.saleCart.reduce((total, item) => total + item.price * item.quantity, 0);
-  const discount = state.saleCart.reduce((total, item) => total + item.discount, 0);
-  return {
-    subtotal,
-    discount,
-    total: Math.max(0, subtotal - discount),
+function saveStoreCustomer(event) {
+  event.preventDefault();
+  const customer = {
+    id: createId("cust"),
+    name: elements.storeRegisterName.value.trim(),
+    phone: elements.storeRegisterPhone.value.trim(),
+    email: elements.storeRegisterEmail.value.trim(),
+    address: elements.storeRegisterAddress.value.trim(),
+    createdAt: new Date().toISOString(),
   };
+  state.customers.unshift(customer);
+  persist(storageKeys.customers, state.customers);
+  elements.customerDialog.close();
+  elements.storeCustomerForm.reset();
+  renderAll();
+  elements.storeCustomer.value = customer.id;
+  elements.storeAddress.value = customer.address;
+  showToast("Cliente registrado");
+}
+
+function renderCustomerSelects() {
+  const options = state.customers.map((customer) => `<option value="${customer.id}">${escapeHTML(customer.name)}</option>`).join("");
+  elements.storeCustomer.innerHTML = options || '<option value="">Sin clientes</option>';
 }
 
 function renderCustomers() {
@@ -648,12 +608,11 @@ function renderCustomers() {
     const text = `${customer.name} ${customer.phone} ${customer.email} ${customer.address}`.toLowerCase();
     return text.includes(state.customerQuery);
   });
-
   elements.customerCards.innerHTML = customers.length
     ? customers
         .map((customer) => {
-          const sales = state.sales.filter((sale) => sale.customerId === customer.id);
-          const total = sales.reduce((sum, sale) => sum + sale.total, 0);
+          const orders = state.orders.filter((order) => order.customerId === customer.id);
+          const total = orders.reduce((sum, order) => sum + order.total, 0);
           return `
             <article class="customer-card">
               <div class="avatar">${escapeHTML(initials(customer.name))}</div>
@@ -663,7 +622,7 @@ function renderCustomers() {
                 <p>${escapeHTML(customer.email || "Sin correo")}</p>
                 <small>${escapeHTML(customer.address || "Sin direccion")}</small>
                 <div class="customer-meta">
-                  <span>${sales.length} ventas</span>
+                  <span>${orders.length} pedidos</span>
                   <span>${currency.format(total)}</span>
                 </div>
                 <button class="ghost-button small" type="button" data-action="edit-customer" data-id="${customer.id}">Editar</button>
@@ -672,12 +631,11 @@ function renderCustomers() {
           `;
         })
         .join("")
-    : emptyState("No hay clientes con ese filtro.");
+    : emptyState("No hay clientes.");
 }
 
 function saveCustomer(event) {
   event.preventDefault();
-
   const id = elements.customerId.value || createId("cust");
   const customer = {
     id,
@@ -687,11 +645,9 @@ function saveCustomer(event) {
     address: elements.customerAddress.value.trim(),
     createdAt: getCustomer(id)?.createdAt || new Date().toISOString(),
   };
-
-  const existingIndex = state.customers.findIndex((item) => item.id === id);
-  if (existingIndex >= 0) state.customers[existingIndex] = customer;
+  const index = state.customers.findIndex((item) => item.id === id);
+  if (index >= 0) state.customers[index] = customer;
   else state.customers.unshift(customer);
-
   persist(storageKeys.customers, state.customers);
   clearCustomerForm();
   renderAll();
@@ -701,7 +657,6 @@ function saveCustomer(event) {
 function editCustomer(id) {
   const customer = getCustomer(id);
   if (!customer) return;
-
   elements.customerFormTitle.textContent = "Editar cliente";
   elements.customerId.value = customer.id;
   elements.customerName.value = customer.name;
@@ -717,26 +672,235 @@ function clearCustomerForm() {
   elements.customerFormTitle.textContent = "Nuevo cliente";
 }
 
-function renderSelects() {
-  const activeProducts = state.products.filter((product) => product.status === "Activo");
-  const productOptions = activeProducts
-    .map((product) => `<option value="${product.id}">${escapeHTML(product.name)} - ${product.stock} disp.</option>`)
+function renderOrders() {
+  elements.ordersBoard.innerHTML = orderColumns
+    .map((column) => {
+      const orders = state.orders.filter((order) => order.status === column);
+      return `
+        <section class="kanban-column">
+          <h3>${column}</h3>
+          ${orders.length ? orders.map(orderCard).join("") : emptyState("Sin pedidos")}
+        </section>
+      `;
+    })
     .join("");
-
-  elements.inventoryProduct.innerHTML = state.products
-    .map((product) => `<option value="${product.id}">${escapeHTML(product.name)}</option>`)
-    .join("");
-  elements.saleProduct.innerHTML = productOptions || '<option value="">Sin productos activos</option>';
-  elements.saleCustomer.innerHTML =
-    '<option value="">Venta mostrador</option>' +
-    state.customers.map((customer) => `<option value="${customer.id}">${escapeHTML(customer.name)}</option>`).join("");
 }
 
-function stockStatus(product) {
-  if (product.stock <= 0) return { label: "Agotado", className: "danger" };
-  if (product.stock <= product.minStock) return { label: "Stock bajo", className: "warning" };
-  if (product.stock >= product.maxStock) return { label: "Stock maximo", className: "info" };
-  return { label: "Disponible", className: "success" };
+function orderCard(order) {
+  const nextAction = order.status === "Completado" ? "" : `<button class="ghost-button small" type="button" data-action="order-next" data-id="${order.id}">Avanzar</button>`;
+  return `
+    <article class="order-card">
+      <strong>${escapeHTML(order.id)}</strong>
+      <span>${escapeHTML(order.customerName)}</span>
+      <span>${escapeHTML(order.deliveryType)} - ${currency.format(order.total)}</span>
+      ${nextAction}
+    </article>
+  `;
+}
+
+function moveOrderNext(orderId) {
+  const order = getOrder(orderId);
+  if (!order) return;
+  const currentIndex = orderColumns.indexOf(order.status);
+  if (currentIndex < orderColumns.length - 1) order.status = orderColumns[currentIndex + 1];
+  const shipment = state.shipments.find((item) => item.orderId === order.id);
+  if (order.status === "Enviado" && shipment) shipment.status = "En ruta";
+  if (order.status === "Completado" && shipment) shipment.status = "Entregado";
+  persistAll();
+  renderAll();
+}
+
+function renderProducts() {
+  const products = state.products.filter((product) => {
+    const text = `${product.name} ${product.category} ${product.type} ${product.status}`.toLowerCase();
+    return text.includes(state.productQuery);
+  });
+  elements.productTable.innerHTML = products.length
+    ? products
+        .map((product) => {
+          const status = stockStatus(product);
+          return `
+            <tr>
+              <td><strong>${escapeHTML(product.name)}</strong><span>${escapeHTML(product.description)}</span></td>
+              <td>${escapeHTML(product.category)}</td>
+              <td>${currency.format(product.price)}</td>
+              <td><strong>${product.stock}</strong><span>${escapeHTML(status.label)}</span></td>
+              <td><span class="badge ${product.type === "Receta medica" ? "danger" : "success"}">${escapeHTML(product.type)}</span></td>
+              <td>
+                <div class="table-actions">
+                  <button class="ghost-button small" type="button" data-action="edit-product" data-id="${product.id}">Editar</button>
+                  <button class="ghost-button small" type="button" data-action="toggle-product" data-id="${product.id}">
+                    ${product.status === "Activo" ? "Pausar" : "Activar"}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        })
+        .join("")
+    : tableEmpty(6, "No hay productos.");
+}
+
+function saveProduct(event) {
+  event.preventDefault();
+  const id = elements.productId.value || createId("prod");
+  const price = toNumber(elements.productPrice.value);
+  const stock = toInteger(elements.productStock.value);
+  const minStock = toInteger(elements.productMinStock.value);
+  const maxStock = toInteger(elements.productMaxStock.value);
+  if ([price, stock, minStock, maxStock].some((value) => value < 0)) return showToast("No se permiten valores negativos");
+  if (minStock > maxStock) return showToast("El minimo no puede superar el maximo");
+  if (stock > maxStock) return showToast("El stock no puede superar el maximo");
+
+  const product = {
+    id,
+    name: elements.productName.value.trim(),
+    category: elements.productCategory.value.trim(),
+    price,
+    stock,
+    minStock,
+    maxStock,
+    type: elements.productType.value,
+    status: elements.productStatus.value,
+    description: elements.productDescription.value.trim(),
+  };
+  const index = state.products.findIndex((item) => item.id === id);
+  if (index >= 0) state.products[index] = product;
+  else state.products.unshift(product);
+  persist(storageKeys.products, state.products);
+  clearProductForm();
+  renderAll();
+  showToast("Producto guardado");
+}
+
+function editProduct(id) {
+  const product = getProduct(id);
+  if (!product) return;
+  elements.productFormTitle.textContent = "Editar producto";
+  elements.productId.value = product.id;
+  elements.productName.value = product.name;
+  elements.productCategory.value = product.category;
+  elements.productPrice.value = product.price;
+  elements.productStock.value = product.stock;
+  elements.productMinStock.value = product.minStock;
+  elements.productMaxStock.value = product.maxStock;
+  elements.productType.value = product.type;
+  elements.productStatus.value = product.status;
+  elements.productDescription.value = product.description;
+  showView("productos");
+}
+
+function toggleProduct(id) {
+  const product = getProduct(id);
+  if (!product) return;
+  product.status = product.status === "Activo" ? "Pausado" : "Activo";
+  persist(storageKeys.products, state.products);
+  renderAll();
+}
+
+function clearProductForm() {
+  elements.productForm.reset();
+  elements.productId.value = "";
+  elements.productFormTitle.textContent = "Nuevo producto";
+  elements.productMinStock.value = 5;
+  elements.productMaxStock.value = 50;
+}
+
+function renderSales() {
+  elements.salesTable.innerHTML = state.sales.length
+    ? state.sales
+        .map(
+          (sale) => `
+            <tr>
+              <td><strong>${escapeHTML(sale.id)}</strong></td>
+              <td>${escapeHTML(sale.orderId)}</td>
+              <td>${escapeHTML(sale.customerName)}</td>
+              <td>${escapeHTML(sale.paymentMethod)}</td>
+              <td>${currency.format(sale.total)}</td>
+              <td>${formatShortDate(sale.createdAt)}</td>
+            </tr>
+          `,
+        )
+        .join("")
+    : tableEmpty(6, "Aun no hay ventas confirmadas.");
+}
+
+function renderShipments() {
+  elements.shipmentsTable.innerHTML = state.shipments.length
+    ? state.shipments
+        .map(
+          (shipment) => `
+            <tr>
+              <td><strong>${escapeHTML(shipment.orderId)}</strong></td>
+              <td>${escapeHTML(shipment.customerName)}</td>
+              <td>${escapeHTML(shipment.type)}</td>
+              <td>${escapeHTML(shipment.address)}</td>
+              <td><span class="badge info">${escapeHTML(shipment.status)}</span></td>
+              <td><button class="ghost-button small" type="button" data-action="mark-shipped" data-id="${shipment.id}">Marcar enviado</button></td>
+            </tr>
+          `,
+        )
+        .join("")
+    : tableEmpty(6, "No hay envios.");
+}
+
+function markShipmentSent(shipmentId) {
+  const shipment = state.shipments.find((item) => item.id === shipmentId);
+  if (!shipment) return;
+  shipment.status = "En ruta";
+  const order = getOrder(shipment.orderId);
+  if (order && order.status !== "Completado") order.status = "Enviado";
+  persistAll();
+  renderAll();
+}
+
+function renderPayments() {
+  elements.paymentsTable.innerHTML = state.payments.length
+    ? state.payments
+        .map(
+          (payment) => `
+            <tr>
+              <td><strong>${escapeHTML(payment.orderId)}</strong></td>
+              <td>${escapeHTML(payment.customerName)}</td>
+              <td>${escapeHTML(payment.method)}</td>
+              <td>${currency.format(payment.total)}</td>
+              <td><span class="badge ${payment.status === "Pagado" ? "success" : "warning"}">${escapeHTML(payment.status)}</span></td>
+              <td><button class="ghost-button small" type="button" data-action="mark-paid" data-id="${payment.id}">Marcar pagado</button></td>
+            </tr>
+          `,
+        )
+        .join("")
+    : tableEmpty(6, "No hay cobros.");
+}
+
+function markPaymentPaid(paymentId) {
+  const payment = state.payments.find((item) => item.id === paymentId);
+  if (!payment || payment.status === "Pagado") return;
+  payment.status = "Pagado";
+  payment.method = payment.method === "Pendiente" ? "Transferencia" : payment.method;
+  const order = getOrder(payment.orderId);
+  if (order) {
+    order.paymentMethod = payment.method;
+    if (order.status === "Por cobrar") order.status = "Por enviar";
+    createSaleFromOrder(order, payment);
+  }
+  const shipment = state.shipments.find((item) => item.orderId === payment.orderId);
+  if (shipment && shipment.status === "Esperando pago") shipment.status = "Preparando";
+  persistAll();
+  renderAll();
+}
+
+function createSaleFromOrder(order, payment) {
+  if (state.sales.some((sale) => sale.orderId === order.id)) return;
+  state.sales.unshift({
+    id: `VT-${Date.now().toString().slice(-6)}`,
+    orderId: order.id,
+    customerName: order.customerName,
+    paymentMethod: payment.method,
+    total: order.total,
+    items: order.items,
+    createdAt: new Date().toISOString(),
+  });
 }
 
 function getProduct(id) {
@@ -747,21 +911,61 @@ function getCustomer(id) {
   return state.customers.find((customer) => customer.id === id);
 }
 
+function getOrder(id) {
+  return state.orders.find((order) => order.id === id);
+}
+
+function stockStatus(product) {
+  if (product.stock <= 0) return { label: "Agotado", className: "danger" };
+  if (product.stock <= product.minStock) return { label: "Stock bajo", className: "warning" };
+  return { label: "Disponible", className: "success" };
+}
+
 function resetDemoData() {
-  if (!window.confirm("Reiniciar los datos demo de Mini Farmacia?")) return;
-  state.products = initialProducts.map((product) => ({ ...product }));
-  state.customers = initialCustomers.map((customer) => ({ ...customer }));
+  if (!window.confirm("Reiniciar demo de Mini Farmacia?")) return;
+  state.products = initialProducts.map((item) => ({ ...item }));
+  state.customers = initialCustomers.map((item) => ({ ...item }));
+  state.orders = [];
+  state.payments = [];
+  state.shipments = [];
   state.sales = [];
-  state.movements = [];
-  state.saleCart = [];
+  state.conversations = initialConversations.map((item) => ({ ...item }));
+  state.storeCart = [];
+  persistAll();
+  seedChat();
+  renderAll();
+  showToast("Demo reiniciado");
+}
+
+function persistAll() {
   persist(storageKeys.products, state.products);
   persist(storageKeys.customers, state.customers);
+  persist(storageKeys.orders, state.orders);
+  persist(storageKeys.payments, state.payments);
+  persist(storageKeys.shipments, state.shipments);
   persist(storageKeys.sales, state.sales);
-  persist(storageKeys.movements, state.movements);
-  clearProductForm();
-  clearCustomerForm();
-  renderAll();
-  showToast("Datos demo reiniciados");
+  persist(storageKeys.conversations, state.conversations);
+}
+
+function persist(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readJSON(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : clone(fallback);
+  } catch {
+    return clone(fallback);
+  }
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function createId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function listRow(title, subtitle, meta) {
@@ -784,23 +988,6 @@ function emptyState(message) {
   return `<div class="empty-state">${escapeHTML(message)}</div>`;
 }
 
-function readJSON(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback.map ? fallback.map((item) => ({ ...item })) : fallback;
-  } catch {
-    return fallback.map ? fallback.map((item) => ({ ...item })) : fallback;
-  }
-}
-
-function persist(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function createId(prefix) {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function toNumber(value) {
   return Number.parseFloat(value || "0");
 }
@@ -810,10 +997,11 @@ function toInteger(value) {
 }
 
 function formatShortDate(value) {
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+function formatTime(value) {
+  return new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 function initials(name) {
@@ -835,13 +1023,7 @@ function showToast(message) {
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
-    const entities = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    };
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
     return entities[char];
   });
 }

@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Mini Farmacia v1.0</title>
+    <title>Mini Farmacia | CRM y tienda online</title>
     <meta
       name="description"
-      content="Sistema administrativo Mini Farmacia v1.0 para dashboard, productos, inventario, ventas y clientes."
+      content="CRM y tienda online para Mini Farmacia con flujo de WhatsApp, pedidos, envios y cobros."
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -15,41 +15,35 @@
       <aside class="sidebar">
         <a class="brand" href="#dashboard" aria-label="Mini Farmacia">
           <img src="assets/mini-farmacia-logo.svg" alt="Mini Farmacia" />
-          <span>v1.0</span>
+          <span>Commerce OS</span>
         </a>
 
         <nav class="side-nav" aria-label="Modulos principales">
-          <button class="nav-item active" type="button" data-view="dashboard">
-            <span>DB</span>
-            Dashboard
-          </button>
-          <button class="nav-item" type="button" data-view="productos">
-            <span>PR</span>
-            Productos
-          </button>
-          <button class="nav-item" type="button" data-view="inventario">
-            <span>IN</span>
-            Inventario
-          </button>
-          <button class="nav-item" type="button" data-view="ventas">
-            <span>VT</span>
-            Ventas
-          </button>
-          <button class="nav-item" type="button" data-view="clientes">
-            <span>CL</span>
-            Clientes
-          </button>
+          <button class="nav-item active" type="button" data-view="dashboard"><span>⌂</span>Inicio</button>
+          <button class="nav-item" type="button" data-view="ventas"><span>▥</span>Estadisticas</button>
+
+          <p class="nav-section-title">Gestion</p>
+          <button class="nav-item" type="button" data-view="pedidos"><span>▣</span>Pedidos <strong class="nav-badge" id="navOrdersBadge">0</strong></button>
+          <button class="nav-item" type="button" data-view="ventas"><span>$</span>Ventas</button>
+          <button class="nav-item" type="button" data-view="productos"><span>◇</span>Productos</button>
+          <button class="nav-item" type="button" data-view="cobros"><span>₿</span>Cobros</button>
+          <button class="nav-item" type="button" data-view="envios"><span>▤</span>Envios</button>
+          <button class="nav-item" type="button" data-view="clientes"><span>☷</span>Clientes</button>
+
+          <p class="nav-section-title">Canales de venta</p>
+          <button class="nav-item" type="button" data-view="tienda"><span>▦</span>Tienda en linea <em class="nav-external">↗</em></button>
+          <button class="nav-item" type="button" data-view="whatsapp"><span>☏</span>Chat WhatsApp</button>
         </nav>
       </aside>
 
       <main class="workspace">
         <header class="workspace-header">
           <div>
-            <p class="eyebrow">SICMA Mini Farmacia</p>
-            <h1 id="viewTitle">Dashboard</h1>
+            <p class="eyebrow">Mini Farmacia OS</p>
+            <h1 id="viewTitle">Inicio</h1>
           </div>
           <div class="header-actions">
-            <span class="status-pill" id="todayLabel">Operacion local</span>
+            <span class="status-pill" id="todayLabel">Live commerce</span>
             <button class="ghost-button" type="button" id="resetDemoButton">Reiniciar demo</button>
           </div>
         </header>
@@ -57,24 +51,24 @@
         <section class="view active" id="dashboard">
           <div class="metric-grid">
             <article class="metric-card">
-              <span>Ventas hoy</span>
+              <span>Pedidos abiertos</span>
+              <strong id="metricOpenOrders">0</strong>
+              <small id="metricPendingPayments">0 por cobrar</small>
+            </article>
+            <article class="metric-card">
+              <span>Ventas del dia</span>
               <strong id="metricSalesToday">$0</strong>
               <small id="metricSalesCount">0 tickets</small>
+            </article>
+            <article class="metric-card">
+              <span>Envios activos</span>
+              <strong id="metricShipments">0</strong>
+              <small id="metricNationalShipments">0 nacionales</small>
             </article>
             <article class="metric-card">
               <span>Productos activos</span>
               <strong id="metricProducts">0</strong>
               <small id="metricLowStock">0 con stock bajo</small>
-            </article>
-            <article class="metric-card">
-              <span>Clientes</span>
-              <strong id="metricCustomers">0</strong>
-              <small id="metricNewCustomers">0 nuevos</small>
-            </article>
-            <article class="metric-card">
-              <span>Inventario</span>
-              <strong id="metricInventoryValue">$0</strong>
-              <small>Valor estimado</small>
             </article>
           </div>
 
@@ -82,25 +76,194 @@
             <section class="panel-card">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Prioridad</p>
-                  <h2>Alertas de inventario</h2>
+                  <p class="eyebrow">Customer journey</p>
+                  <h2>Flujo WhatsApp → tienda → entrega</h2>
                 </div>
-                <button class="ghost-button" type="button" data-view="inventario">Ver inventario</button>
+                <button class="ghost-button" type="button" data-view="whatsapp">Abrir</button>
               </div>
-              <div class="list-stack" id="dashboardAlerts"></div>
+              <div class="flow-line">
+                <span>1 WhatsApp</span>
+                <span>2 Liga tienda</span>
+                <span>3 Pedido</span>
+                <span>4 Cobro</span>
+                <span>5 Envio</span>
+              </div>
+              <div class="list-stack" id="dashboardOrders"></div>
             </section>
 
             <section class="panel-card">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Actividad</p>
-                  <h2>Ventas recientes</h2>
+                  <p class="eyebrow">Smart ops</p>
+                  <h2>Alertas operativas</h2>
                 </div>
-                <button class="ghost-button" type="button" data-view="ventas">Nueva venta</button>
+                <button class="ghost-button" type="button" data-view="productos">Productos</button>
               </div>
-              <div class="list-stack" id="dashboardSales"></div>
+              <div class="list-stack" id="dashboardAlerts"></div>
             </section>
           </div>
+        </section>
+
+        <section class="view" id="whatsapp">
+          <div class="module-grid">
+            <article class="phone-shell">
+              <div class="phone-header">
+                <img src="assets/mini-farmacia-logo.svg" alt="" />
+                <div>
+                  <strong>Mini Farmacia</strong>
+                  <small>Canal de entrada</small>
+                </div>
+              </div>
+              <div class="chat-log" id="chatLog"></div>
+              <form class="chat-form" id="chatForm">
+                <input id="incomingMessage" type="text" placeholder="Mensaje del cliente" autocomplete="off" />
+                <button class="primary-button" type="submit">Responder</button>
+              </form>
+            </article>
+
+            <section class="panel-card form-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Automatizacion</p>
+                  <h2>Mensaje con liga de tienda</h2>
+                </div>
+              </div>
+              <label>
+                Liga publica de tienda
+                <input id="storeLink" type="url" value="https://mixteko.github.io/Minifarmacia/" />
+              </label>
+              <label>
+                WhatsApp del negocio
+                <input id="businessPhone" type="tel" value="5218112345678" />
+              </label>
+              <label>
+                Mensaje de bienvenida
+                <textarea id="welcomeMessage" rows="5"></textarea>
+              </label>
+              <button class="primary-button" type="button" id="copyWelcomeButton">Copiar respuesta</button>
+              <div class="note-box">
+                Preparado para WhatsApp Cloud API: webhook de entrada, respuesta con liga y registro de conversacion.
+              </div>
+            </section>
+          </div>
+
+          <section class="panel-card">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Conversaciones</p>
+                <h2>Clientes recientes</h2>
+              </div>
+            </div>
+            <div class="list-stack" id="conversationList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="tienda">
+          <header class="store-hero">
+            <div>
+              <img src="assets/mini-farmacia-logo.svg" alt="Mini Farmacia" />
+              <p class="eyebrow">Vista cliente</p>
+              <h2>Farmacia en linea</h2>
+              <p>Esta es la pantalla que recibe el cliente desde la liga enviada por WhatsApp.</p>
+            </div>
+            <button class="primary-button" type="button" id="storeLoginButton">Registrarme / iniciar sesion</button>
+          </header>
+
+          <div class="store-toolbar">
+            <input id="storeSearch" type="search" placeholder="Buscar medicamento" />
+            <select id="storeCategory"></select>
+          </div>
+
+          <div class="store-layout">
+            <section class="product-grid" id="storeProductGrid"></section>
+            <aside class="panel-card store-cart">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Pedido online</p>
+                  <h2>Carrito</h2>
+                </div>
+                <button class="ghost-button small" type="button" id="clearStoreCartButton">Vaciar</button>
+              </div>
+              <div class="ticket-list" id="storeCartList"></div>
+              <form class="checkout-form" id="storeCheckoutForm">
+                <label>
+                  Cliente
+                  <select id="storeCustomer"></select>
+                </label>
+                <label>
+                  Tipo de entrega
+                  <select id="storeDeliveryType">
+                    <option value="Local">Local</option>
+                    <option value="Nacional">Nacional</option>
+                  </select>
+                </label>
+                <label>
+                  Direccion de entrega
+                  <textarea id="storeAddress" rows="3" required></textarea>
+                </label>
+                <label>
+                  Metodo de pago
+                  <select id="storePaymentMethod">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="Clip">Clip</option>
+                    <option value="Efectivo">Efectivo</option>
+                  </select>
+                </label>
+                <div class="totals-box">
+                  <div><span>Subtotal</span><strong id="storeSubtotal">$0</strong></div>
+                  <div><span>Envio</span><strong id="storeShipping">$0</strong></div>
+                  <div><span>Total</span><strong id="storeTotal">$0</strong></div>
+                </div>
+                <button class="primary-button" type="submit">Generar pedido</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="clientes">
+          <div class="module-grid">
+            <form class="panel-card form-panel" id="customerForm">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Registro</p>
+                  <h2 id="customerFormTitle">Nuevo cliente</h2>
+                </div>
+                <button class="ghost-button" type="button" id="clearCustomerForm">Limpiar</button>
+              </div>
+              <input id="customerId" type="hidden" />
+              <label>Nombre <input id="customerName" type="text" required /></label>
+              <div class="form-row">
+                <label>Telefono <input id="customerPhone" type="tel" required /></label>
+                <label>Correo <input id="customerEmail" type="email" /></label>
+              </div>
+              <label>Direccion <textarea id="customerAddress" rows="3"></textarea></label>
+              <button class="primary-button" type="submit">Guardar cliente</button>
+            </form>
+
+            <section class="panel-card table-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">CRM</p>
+                  <h2>Clientes</h2>
+                </div>
+                <input class="inline-search" id="customerSearch" type="search" placeholder="Buscar cliente" />
+              </div>
+              <div class="customer-grid" id="customerCards"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="pedidos">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Operacion</p>
+              <h2>Pedidos</h2>
+            </div>
+            <button class="primary-button" type="button" data-view="tienda">Crear desde tienda</button>
+          </div>
+          <div class="kanban-grid" id="ordersBoard"></div>
         </section>
 
         <section class="view" id="productos">
@@ -114,33 +277,15 @@
                 <button class="ghost-button" type="button" id="clearProductForm">Limpiar</button>
               </div>
               <input id="productId" type="hidden" />
-              <label>
-                Nombre del producto
-                <input id="productName" type="text" required placeholder="Ej. Paracetamol 500 mg" />
-              </label>
-              <label>
-                Categoria
-                <input id="productCategory" type="text" required placeholder="Ej. Dolor y fiebre" />
-              </label>
+              <label>Nombre <input id="productName" type="text" required /></label>
+              <label>Categoria <input id="productCategory" type="text" required /></label>
               <div class="form-row">
-                <label>
-                  Precio
-                  <input id="productPrice" type="number" min="0" step="0.01" required />
-                </label>
-                <label>
-                  Stock inicial
-                  <input id="productStock" type="number" min="0" step="1" required />
-                </label>
+                <label>Precio <input id="productPrice" type="number" min="0" step="0.01" required /></label>
+                <label>Stock <input id="productStock" type="number" min="0" step="1" required /></label>
               </div>
               <div class="form-row">
-                <label>
-                  Stock minimo
-                  <input id="productMinStock" type="number" min="0" step="1" required />
-                </label>
-                <label>
-                  Stock maximo
-                  <input id="productMaxStock" type="number" min="0" step="1" required />
-                </label>
+                <label>Stock minimo <input id="productMinStock" type="number" min="0" step="1" required /></label>
+                <label>Stock maximo <input id="productMaxStock" type="number" min="0" step="1" required /></label>
               </div>
               <div class="form-row">
                 <label>
@@ -158,17 +303,14 @@
                   </select>
                 </label>
               </div>
-              <label>
-                Descripcion
-                <textarea id="productDescription" rows="3" placeholder="Uso comercial o nota interna"></textarea>
-              </label>
+              <label>Descripcion <textarea id="productDescription" rows="3"></textarea></label>
               <button class="primary-button" type="submit">Guardar producto</button>
             </form>
 
             <section class="panel-card table-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Administracion</p>
+                  <p class="eyebrow">Inventario comercial</p>
                   <h2>Productos</h2>
                 </div>
                 <input class="inline-search" id="productSearch" type="search" placeholder="Buscar producto" />
@@ -192,149 +334,20 @@
           </div>
         </section>
 
-        <section class="view" id="inventario">
-          <div class="module-grid">
-            <form class="panel-card form-panel" id="inventoryForm">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Movimiento</p>
-                  <h2>Ajustar existencias</h2>
-                </div>
-              </div>
-              <label>
-                Producto
-                <select id="inventoryProduct" required></select>
-              </label>
-              <div class="form-row">
-                <label>
-                  Tipo de movimiento
-                  <select id="inventoryType">
-                    <option value="entrada">Entrada</option>
-                    <option value="salida">Salida</option>
-                    <option value="ajuste">Ajuste exacto</option>
-                  </select>
-                </label>
-                <label>
-                  Cantidad
-                  <input id="inventoryQuantity" type="number" min="0" step="1" required />
-                </label>
-              </div>
-              <label>
-                Motivo
-                <textarea id="inventoryReason" rows="3" placeholder="Compra, merma, correccion, devolucion"></textarea>
-              </label>
-              <button class="primary-button" type="submit">Registrar movimiento</button>
-            </form>
-
-            <section class="panel-card table-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Control</p>
-                  <h2>Estado de inventario</h2>
-                </div>
-              </div>
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th>Actual</th>
-                      <th>Minimo</th>
-                      <th>Maximo</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody id="inventoryTable"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-
-          <section class="panel-card">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Bitacora</p>
-                <h2>Movimientos recientes</h2>
-              </div>
-            </div>
-            <div class="list-stack" id="movementList"></div>
-          </section>
-        </section>
-
         <section class="view" id="ventas">
-          <div class="module-grid">
-            <form class="panel-card form-panel" id="saleItemForm">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Punto de venta</p>
-                  <h2>Agregar al ticket</h2>
-                </div>
-              </div>
-              <label>
-                Producto
-                <select id="saleProduct" required></select>
-              </label>
-              <div class="form-row">
-                <label>
-                  Cantidad
-                  <input id="saleQuantity" type="number" min="1" step="1" value="1" required />
-                </label>
-                <label>
-                  Descuento
-                  <input id="saleDiscount" type="number" min="0" step="0.01" value="0" />
-                </label>
-              </div>
-              <button class="primary-button" type="submit">Agregar producto</button>
-            </form>
-
-            <section class="panel-card sale-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Ticket</p>
-                  <h2>Venta actual</h2>
-                </div>
-                <button class="ghost-button" type="button" id="clearSaleButton">Vaciar</button>
-              </div>
-              <div class="ticket-list" id="saleCartList"></div>
-              <form class="checkout-form" id="saleCheckoutForm">
-                <div class="form-row">
-                  <label>
-                    Cliente
-                    <select id="saleCustomer"></select>
-                  </label>
-                  <label>
-                    Metodo de pago
-                    <select id="salePayment">
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Transferencia">Transferencia</option>
-                      <option value="Mercado Pago">Mercado Pago</option>
-                      <option value="Clip">Clip</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="totals-box">
-                  <div><span>Subtotal</span><strong id="saleSubtotal">$0</strong></div>
-                  <div><span>Descuento</span><strong id="saleDiscountTotal">$0</strong></div>
-                  <div><span>Total</span><strong id="saleTotal">$0</strong></div>
-                </div>
-                <button class="primary-button" type="submit">Confirmar venta</button>
-              </form>
-            </section>
-          </div>
-
-          <section class="panel-card">
+          <div class="panel-card">
             <div class="panel-heading">
               <div>
                 <p class="eyebrow">Historial</p>
-                <h2>Ventas registradas</h2>
+                <h2>Ventas confirmadas</h2>
               </div>
             </div>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Ticket</th>
+                    <th>Venta</th>
+                    <th>Pedido</th>
                     <th>Cliente</th>
                     <th>Pago</th>
                     <th>Total</th>
@@ -344,55 +357,79 @@
                 <tbody id="salesTable"></tbody>
               </table>
             </div>
-          </section>
+          </div>
         </section>
 
-        <section class="view" id="clientes">
-          <div class="module-grid">
-            <form class="panel-card form-panel" id="customerForm">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Directorio</p>
-                  <h2 id="customerFormTitle">Nuevo cliente</h2>
-                </div>
-                <button class="ghost-button" type="button" id="clearCustomerForm">Limpiar</button>
+        <section class="view" id="envios">
+          <div class="panel-card">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Logistica</p>
+                <h2>Envios</h2>
               </div>
-              <input id="customerId" type="hidden" />
-              <label>
-                Nombre
-                <input id="customerName" type="text" required placeholder="Nombre completo" />
-              </label>
-              <div class="form-row">
-                <label>
-                  Telefono
-                  <input id="customerPhone" type="tel" required />
-                </label>
-                <label>
-                  Correo
-                  <input id="customerEmail" type="email" />
-                </label>
-              </div>
-              <label>
-                Direccion
-                <textarea id="customerAddress" rows="3"></textarea>
-              </label>
-              <button class="primary-button" type="submit">Guardar cliente</button>
-            </form>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Direccion</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="shipmentsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-            <section class="panel-card table-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Clientes</p>
-                  <h2>Registro de clientes</h2>
-                </div>
-                <input class="inline-search" id="customerSearch" type="search" placeholder="Buscar cliente" />
+        <section class="view" id="cobros">
+          <div class="panel-card">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Pagos</p>
+                <h2>Cobros</h2>
               </div>
-              <div class="customer-grid" id="customerCards"></div>
-            </section>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Cliente</th>
+                    <th>Metodo</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTable"></tbody>
+              </table>
+            </div>
           </div>
         </section>
       </main>
     </div>
+
+    <dialog class="account-dialog" id="customerDialog">
+      <form method="dialog" class="dialog-close-form">
+        <button class="ghost-button" type="submit">Cerrar</button>
+      </form>
+      <form class="account-form" id="storeCustomerForm">
+        <p class="eyebrow">Cuenta cliente</p>
+        <h2>Registro para tienda online</h2>
+        <label>Nombre <input id="storeRegisterName" type="text" required /></label>
+        <div class="form-row">
+          <label>Telefono <input id="storeRegisterPhone" type="tel" required /></label>
+          <label>Correo <input id="storeRegisterEmail" type="email" /></label>
+        </div>
+        <label>Direccion <textarea id="storeRegisterAddress" rows="3" required></textarea></label>
+        <button class="primary-button" type="submit">Guardar cuenta</button>
+      </form>
+    </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="app.js"></script>
