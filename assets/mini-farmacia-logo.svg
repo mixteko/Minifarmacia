@@ -1,80 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 260" role="img" aria-labelledby="title desc">
   <title id="title">Mini Farmacia</title>
-  <desc id="desc">Logotipo moderno de Mini Farmacia con capsula azul y roja.</desc>
+  <desc id="desc">Logotipo Mini Farmacia con capsula azul y roja.</desc>
   <defs>
-    <linearGradient id="capsuleBlue" x1="76" x2="166" y1="35" y2="156" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0A7BFF" />
-      <stop offset="1" stop-color="#0B43C7" />
+    <linearGradient id="blue" x1="80" x2="180" y1="26" y2="148" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a7bff"/>
+      <stop offset="1" stop-color="#123ed8"/>
     </linearGradient>
-    <linearGradient id="capsuleRed" x1="112" x2="182" y1="133" y2="230" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF486B" />
-      <stop offset="1" stop-color="#E60035" />
+    <linearGradient id="red" x1="94" x2="190" y1="117" y2="222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff5876"/>
+      <stop offset="1" stop-color="#ef0b36"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#082b73" flood-opacity=".24" />
-    </filter>
   </defs>
-  <g filter="url(#shadow)">
-    <path
-      fill="#fff"
-      d="M36 157C18 104 48 51 98 37c50-14 76 16 102 40 24 22 46 18 87 19 54 2 94 39 98 88 4 50-29 85-77 91-58 7-83-19-120-22-43-4-79 28-116 8-30-16-25-68-36-104Z"
-    />
-    <path
-      fill="url(#capsuleBlue)"
-      d="M126 21c38-5 73 21 79 58l9 58-143 21-9-58c-6-38 20-73 64-79Z"
-      transform="rotate(-10 138 90)"
-    />
-    <path
-      fill="url(#capsuleRed)"
-      d="m71 155 143-21 8 54c6 40-21 78-61 84-40 6-78-21-84-61l-6-56Z"
-      transform="rotate(-10 146 202)"
-    />
-    <path
-      fill="none"
-      stroke="#fff"
-      stroke-linecap="round"
-      stroke-width="11"
-      d="M83 156 216 136"
-    />
-    <circle cx="132" cy="83" r="8" fill="#fff" opacity=".86" />
-    <circle cx="164" cy="78" r="8" fill="#072b78" opacity=".58" />
-    <path
-      fill="none"
-      stroke="#072b78"
-      stroke-linecap="round"
-      stroke-width="7"
-      d="M127 111c16 13 38 10 51-6"
-    />
+  <rect width="520" height="260" rx="48" fill="#fff"/>
+  <g transform="translate(35 16) rotate(-8 95 110)">
+    <rect x="35" y="8" width="128" height="214" rx="64" fill="url(#blue)"/>
+    <path d="M35 116h128v42c0 35-29 64-64 64s-64-29-64-64v-42Z" fill="url(#red)"/>
+    <path d="M44 115h110" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="84" cy="64" r="9" fill="#fff"/>
+    <circle cx="122" cy="61" r="8" fill="#072b78" opacity=".62"/>
+    <path d="M80 96c14 12 34 10 48-4" fill="none" stroke="#072b78" stroke-width="7" stroke-linecap="round"/>
   </g>
-  <g transform="translate(106 119) rotate(-7)">
-    <path
-      fill="#0b43c7"
-      d="M25 15 86 4l37 56 28-63 60-8 32 129-52 7-13-60-25 64-35 5-40-54 4 60-53 8L25 15Z"
-    />
-    <path
-      fill="#fff"
-      d="M41 31 78 25l35 53 26-61 39-5 24 98-31 4-13-64-26 67-21 3-42-57 5 62-31 4-2-98Z"
-    />
-    <text
-      x="19"
-      y="167"
-      fill="#0b43c7"
-      font-family="Arial Black, Arial, sans-serif"
-      font-size="54"
-      font-weight="900"
-      letter-spacing="-1"
-      stroke="#fff"
-      stroke-linejoin="round"
-      stroke-width="8"
-    >FARMACIA</text>
-    <text
-      x="19"
-      y="167"
-      fill="#0b43c7"
-      font-family="Arial Black, Arial, sans-serif"
-      font-size="54"
-      font-weight="900"
-      letter-spacing="-1"
-    >FARMACIA</text>
+  <g font-family="Arial Black, Arial, sans-serif" font-weight="900">
+    <text x="164" y="114" fill="#123ed8" font-size="74" letter-spacing="-4">MINI</text>
+    <text x="165" y="169" fill="#123ed8" font-size="43" letter-spacing="-1">FARMACIA</text>
+    <rect x="168" y="184" width="236" height="11" rx="5.5" fill="#ef0b36"/>
   </g>
 </svg>

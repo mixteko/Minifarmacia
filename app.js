@@ -13,7 +13,7 @@ const products = [
     id: "ibuprofeno-400",
     name: "Ibuprofeno 400 mg",
     category: "Dolor y fiebre",
-    description: "Antiinflamatorio de venta común. Confirmar indicaciones antes de comprar.",
+    description: "Antiinflamatorio de venta comun. Confirmar indicaciones antes de comprar.",
     price: 72,
     stock: 16,
     prescription: false,
@@ -23,7 +23,7 @@ const products = [
     id: "loratadina-10",
     name: "Loratadina 10 mg",
     category: "Alergias",
-    description: "Antihistamínico para molestias estacionales y rinitis alérgica.",
+    description: "Antihistaminico para molestias estacionales y rinitis alergica.",
     price: 64,
     stock: 22,
     prescription: false,
@@ -52,8 +52,8 @@ const products = [
   {
     id: "suero-oral",
     name: "Suero oral",
-    category: "Hidratación",
-    description: "Sobres para preparar solución de rehidratación oral.",
+    category: "Hidratacion",
+    description: "Sobres para preparar solucion de rehidratacion oral.",
     price: 36,
     stock: 40,
     prescription: false,
@@ -61,9 +61,9 @@ const products = [
   },
   {
     id: "curitas-kit",
-    name: "Kit de curación",
+    name: "Kit de curacion",
     category: "Primeros auxilios",
-    description: "Gasas, vendas y apósitos para cuidado básico en casa.",
+    description: "Gasas, vendas y apositos para cuidado basico en casa.",
     price: 149,
     stock: 18,
     prescription: false,
@@ -72,8 +72,8 @@ const products = [
   {
     id: "amoxicilina-500",
     name: "Amoxicilina 500 mg",
-    category: "Receta médica",
-    description: "Producto sujeto a validación de receta antes de surtir.",
+    category: "Receta medica",
+    description: "Producto sujeto a validacion de receta antes de surtir.",
     price: 185,
     stock: 9,
     prescription: true,
@@ -100,72 +100,80 @@ const state = {
   }),
 };
 
-const currency = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
+const demoCustomers = [
+  { name: "Laura Martinez", phone: "81 2200 1840", email: "laura@email.com", address: "Monterrey, NL" },
+  { name: "Paciente Nuevo Leon", phone: "81 1500 9000", email: "paciente@correo.com", address: "San Nicolas, NL" },
+];
 
-const categoryTabs = document.querySelector("#categoryTabs");
-const productGrid = document.querySelector("#productGrid");
-const searchInput = document.querySelector("#searchInput");
-const cartButton = document.querySelector("#cartButton");
-const cartCount = document.querySelector("#cartCount");
-const cartDrawer = document.querySelector("#cartDrawer");
-const cartItems = document.querySelector("#cartItems");
-const subtotalAmount = document.querySelector("#subtotalAmount");
-const shippingAmount = document.querySelector("#shippingAmount");
-const totalAmount = document.querySelector("#totalAmount");
-const shippingType = document.querySelector("#shippingType");
-const paymentMethod = document.querySelector("#paymentMethod");
-const deliveryAddress = document.querySelector("#deliveryAddress");
-const checkoutForm = document.querySelector("#checkoutForm");
-const whatsappOrderLink = document.querySelector("#whatsappOrderLink");
-const accountButton = document.querySelector("#accountButton");
-const accountDialog = document.querySelector("#accountDialog");
-const accountForm = document.querySelector("#accountForm");
-const savedUser = document.querySelector("#savedUser");
-const ordersList = document.querySelector("#ordersList");
-const chatLog = document.querySelector("#chatLog");
-const chatForm = document.querySelector("#chatForm");
-const incomingMessage = document.querySelector("#incomingMessage");
-const marketplaceUrl = document.querySelector("#marketplaceUrl");
-const businessPhone = document.querySelector("#businessPhone");
-const welcomeMessage = document.querySelector("#welcomeMessage");
-const copyWelcomeButton = document.querySelector("#copyWelcomeButton");
-const toast = document.querySelector("#toast");
+const currency = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
+
+const categoryTabs = $("#categoryTabs");
+const productGrid = $("#productGrid");
+const searchInput = $("#searchInput");
+const cartButton = $("#cartButton");
+const cartCount = $("#cartCount");
+const cartDrawer = $("#cartDrawer");
+const cartItems = $("#cartItems");
+const subtotalAmount = $("#subtotalAmount");
+const shippingAmount = $("#shippingAmount");
+const totalAmount = $("#totalAmount");
+const shippingType = $("#shippingType");
+const paymentMethod = $("#paymentMethod");
+const deliveryAddress = $("#deliveryAddress");
+const checkoutForm = $("#checkoutForm");
+const whatsappOrderLink = $("#whatsappOrderLink");
+const accountButton = $("#accountButton");
+const accountDialog = $("#accountDialog");
+const accountForm = $("#accountForm");
+const savedUser = $("#savedUser");
+const ordersList = $("#ordersList");
+const chatLog = $("#chatLog");
+const chatForm = $("#chatForm");
+const incomingMessage = $("#incomingMessage");
+const marketplaceUrl = $("#marketplaceUrl");
+const businessPhone = $("#businessPhone");
+const welcomeMessage = $("#welcomeMessage");
+const copyWelcomeButton = $("#copyWelcomeButton");
+const toast = $("#toast");
 
 init();
 
 function init() {
   hydrateSettings();
+  bindEvents();
   renderCategories();
   renderProducts();
+  renderAdminProducts();
   renderCart();
   renderOrders();
+  renderCustomers();
+  renderThreads();
+  renderMetrics();
   renderSavedUser();
   seedChat();
-  bindEvents();
 }
 
 function bindEvents() {
+  $$(".nav-item, [data-view].primary-button").forEach((button) => {
+    button.addEventListener("click", () => showView(button.dataset.view));
+  });
+
   searchInput.addEventListener("input", (event) => {
     state.query = event.target.value.trim().toLowerCase();
     renderProducts();
   });
 
   cartButton.addEventListener("click", openCart);
-  document.querySelectorAll("[data-close-drawer]").forEach((node) => {
-    node.addEventListener("click", closeCart);
-  });
-
+  $$("[data-close-drawer]").forEach((node) => node.addEventListener("click", closeCart));
   shippingType.addEventListener("change", () => {
     renderCart();
     persistUserShipping();
   });
-
   paymentMethod.addEventListener("change", renderCart);
   deliveryAddress.addEventListener("input", renderCart);
-
   checkoutForm.addEventListener("submit", (event) => {
     event.preventDefault();
     confirmOrder();
@@ -186,30 +194,25 @@ function bindEvents() {
     simulateIncomingMessage();
   });
 
-  [marketplaceUrl, businessPhone].forEach((input) => {
-    input.addEventListener("input", saveSettings);
-  });
-
+  [marketplaceUrl, businessPhone].forEach((input) => input.addEventListener("input", saveSettings));
   welcomeMessage.addEventListener("input", saveCustomWelcome);
-
   copyWelcomeButton.addEventListener("click", async () => {
     await navigator.clipboard.writeText(buildWelcomeMessage());
     showToast("Respuesta copiada");
   });
 }
 
+function showView(viewId) {
+  $$(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
+  $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewId));
+}
+
 function hydrateSettings() {
   marketplaceUrl.value = state.settings.marketplaceUrl;
   businessPhone.value = state.settings.businessPhone;
   welcomeMessage.value = state.settings.welcomeMessage || defaultWelcomeMessage();
-
-  if (state.user?.address) {
-    deliveryAddress.value = state.user.address;
-  }
-
-  if (state.user?.shippingType) {
-    shippingType.value = state.user.shippingType;
-  }
+  if (state.user?.address) deliveryAddress.value = state.user.address;
+  if (state.user?.shippingType) shippingType.value = state.user.shippingType;
 }
 
 function renderCategories() {
@@ -217,13 +220,7 @@ function renderCategories() {
   categoryTabs.innerHTML = categories
     .map(
       (category) => `
-        <button
-          class="tab-button ${category === state.category ? "active" : ""}"
-          type="button"
-          role="tab"
-          aria-selected="${category === state.category}"
-          data-category="${category}"
-        >
+        <button class="tab-button ${category === state.category ? "active" : ""}" type="button" data-category="${category}">
           ${category}
         </button>
       `,
@@ -252,27 +249,18 @@ function renderProducts() {
         const inCart = getCartLine(product.id)?.quantity || 0;
         return `
           <article class="product-card">
-            <div
-              class="product-visual"
-              style="--visual-a:${product.colors[0]}; --visual-b:${product.colors[1]}"
-              aria-hidden="true"
-            >
-              <span class="rx-badge">${product.prescription ? "Venta con receta" : "Venta libre"}</span>
-              <span class="stock-badge">${product.stock} en stock</span>
+            <div class="product-visual" style="--visual-a:${product.colors[0]}; --visual-b:${product.colors[1]}">
+              <span>${product.prescription ? "Venta con receta" : "Venta libre"}</span>
             </div>
             <div>
+              <p class="product-category">${product.category}</p>
               <h3>${product.name}</h3>
               <p>${product.description}</p>
             </div>
             <div class="product-actions">
-              <span class="price">${currency.format(product.price)}</span>
-              <button
-                class="add-button"
-                type="button"
-                data-add="${product.id}"
-                ${product.stock <= inCart ? "disabled" : ""}
-              >
-                ${product.stock <= inCart ? "Agotado" : "Agregar al carrito"}
+              <strong>${currency.format(product.price)}</strong>
+              <button class="primary-button small" type="button" data-add="${product.id}" ${product.stock <= inCart ? "disabled" : ""}>
+                Agregar
               </button>
             </div>
           </article>
@@ -285,21 +273,71 @@ function renderProducts() {
   });
 }
 
+function renderAdminProducts() {
+  $("#adminProductTable").innerHTML = products
+    .map(
+      (product) => `
+        <tr>
+          <td><strong>${product.name}</strong><span>${product.description}</span></td>
+          <td>${product.category}</td>
+          <td>${currency.format(product.price)}</td>
+          <td>${product.stock}</td>
+          <td><span class="status-pill">${product.prescription ? "Receta" : "Libre"}</span></td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function renderCustomers() {
+  const customers = state.user ? [state.user, ...demoCustomers] : demoCustomers;
+  $("#customerList").innerHTML = customers
+    .map(
+      (customer) => `
+        <article class="customer-card">
+          <div class="avatar">${customer.name.slice(0, 2).toUpperCase()}</div>
+          <div>
+            <h3>${customer.name}</h3>
+            <p>${customer.phone}</p>
+            <p>${customer.email}</p>
+            <small>${customer.address}</small>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderThreads() {
+  const threads = [
+    { name: "Laura Martinez", text: "Pregunta por envio local", status: "Abierto" },
+    { name: "Paciente Nuevo Leon", text: "Recibio liga de tienda", status: "Nuevo" },
+    { name: state.user?.name || "Cliente invitado", text: "Pendiente de registro", status: "Seguimiento" },
+  ];
+  $("#threadList").innerHTML = threads
+    .map(
+      (thread) => `
+        <div class="thread-row">
+          <div><strong>${thread.name}</strong><span>${thread.text}</span></div>
+          <em>${thread.status}</em>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function renderMetrics() {
+  $("#metricProducts").textContent = products.length;
+  $("#metricOrders").textContent = state.orders.length;
+  $("#metricCustomers").textContent = state.user ? "3" : "2";
+}
+
 function addToCart(productId) {
   const product = getProduct(productId);
   const line = getCartLine(productId);
-
-  if (!product || (line?.quantity || 0) >= product.stock) {
-    showToast("Sin inventario disponible");
-    return;
-  }
-
-  if (line) {
-    line.quantity += 1;
-  } else {
-    state.cart.push({ productId, quantity: 1 });
-  }
-
+  if (!product || (line?.quantity || 0) >= product.stock) return showToast("Sin inventario disponible");
+  if (line) line.quantity += 1;
+  else state.cart.push({ productId, quantity: 1 });
   persistCart();
   renderCart();
   renderProducts();
@@ -308,34 +346,27 @@ function addToCart(productId) {
 
 function renderCart() {
   cartCount.textContent = String(state.cart.reduce((total, line) => total + line.quantity, 0));
-
-  if (!state.cart.length) {
-    cartItems.innerHTML = '<div class="empty-state">Tu carrito está vacío.</div>';
-  } else {
-    cartItems.innerHTML = state.cart
-      .map((line) => {
-        const product = getProduct(line.productId);
-        return `
-          <div class="cart-line">
-            <div>
-              <h3>${product.name}</h3>
-              <p>${currency.format(product.price)} x ${line.quantity}</p>
+  cartItems.innerHTML = state.cart.length
+    ? state.cart
+        .map((line) => {
+          const product = getProduct(line.productId);
+          return `
+            <div class="cart-line">
+              <div><h3>${product.name}</h3><p>${currency.format(product.price)} x ${line.quantity}</p></div>
+              <div class="quantity-controls">
+                <button type="button" data-dec="${product.id}">-</button>
+                <strong>${line.quantity}</strong>
+                <button type="button" data-inc="${product.id}">+</button>
+              </div>
             </div>
-            <div class="quantity-controls" aria-label="Cantidad de ${product.name}">
-              <button type="button" data-dec="${product.id}" aria-label="Quitar uno">-</button>
-              <strong>${line.quantity}</strong>
-              <button type="button" data-inc="${product.id}" aria-label="Agregar uno">+</button>
-            </div>
-          </div>
-        `;
-      })
-      .join("");
-  }
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">Tu carrito esta vacio.</div>';
 
   cartItems.querySelectorAll("[data-inc]").forEach((button) => {
     button.addEventListener("click", () => changeQuantity(button.dataset.inc, 1));
   });
-
   cartItems.querySelectorAll("[data-dec]").forEach((button) => {
     button.addEventListener("click", () => changeQuantity(button.dataset.dec, -1));
   });
@@ -348,21 +379,12 @@ function renderCart() {
 }
 
 function changeQuantity(productId, delta) {
-  const product = getProduct(productId);
   const line = getCartLine(productId);
-  if (!product || !line) return;
-
+  const product = getProduct(productId);
+  if (!line || !product) return;
   line.quantity += delta;
-
-  if (line.quantity <= 0) {
-    state.cart = state.cart.filter((item) => item.productId !== productId);
-  }
-
-  if (line.quantity > product.stock) {
-    line.quantity = product.stock;
-    showToast("Llegaste al inventario disponible");
-  }
-
+  if (line.quantity <= 0) state.cart = state.cart.filter((item) => item.productId !== productId);
+  if (line.quantity > product.stock) line.quantity = product.stock;
   persistCart();
   renderCart();
   renderProducts();
@@ -373,25 +395,15 @@ function calculateTotals() {
     const product = getProduct(line.productId);
     return total + product.price * line.quantity;
   }, 0);
-  const baseShipping = shippingType.value === "national" ? 149 : 49;
-  const shipping = subtotal === 0 || subtotal >= 999 ? 0 : baseShipping;
-  return {
-    subtotal,
-    shipping,
-    total: subtotal + shipping,
-  };
+  const shipping = subtotal === 0 || subtotal >= 999 ? 0 : shippingType.value === "national" ? 149 : 49;
+  return { subtotal, shipping, total: subtotal + shipping };
 }
 
 function confirmOrder() {
-  if (!state.cart.length) {
-    showToast("Agrega productos antes de confirmar");
-    return;
-  }
-
+  if (!state.cart.length) return showToast("Agrega productos antes de confirmar");
   if (!deliveryAddress.value.trim()) {
-    showToast("Agrega una dirección de entrega");
     deliveryAddress.focus();
-    return;
+    return showToast("Agrega una direccion de entrega");
   }
 
   const totals = calculateTotals();
@@ -399,16 +411,13 @@ function confirmOrder() {
     id: `MF-${Date.now().toString().slice(-6)}`,
     createdAt: new Date().toISOString(),
     customer: state.user?.name || "Cliente sin registro",
-    phone: state.user?.phone || "",
-    address: deliveryAddress.value.trim(),
     shippingType: shippingType.value,
-    paymentMethod: paymentMethod.value,
+    total: totals.total,
     items: state.cart.map((line) => ({
       ...line,
       productName: getProduct(line.productId).name,
       price: getProduct(line.productId).price,
     })),
-    total: totals.total,
   };
 
   state.orders.unshift(order);
@@ -417,68 +426,56 @@ function confirmOrder() {
   persistCart();
   renderCart();
   renderOrders();
+  renderMetrics();
   closeCart();
   showToast(`Pedido ${order.id} confirmado`);
 }
 
 function renderOrders() {
-  if (!state.orders.length) {
-    ordersList.innerHTML = '<div class="empty-state">Los pedidos confirmados aparecerán aquí.</div>';
-    return;
-  }
-
-  ordersList.innerHTML = state.orders
-    .map((order) => {
-      const itemSummary = order.items.map((item) => `${item.quantity} x ${item.productName}`).join(", ");
-      return `
-        <article class="order-card">
-          <h3>${order.id}</h3>
-          <div class="order-meta">
-            <span class="order-pill">${order.customer}</span>
-            <span>${formatDate(order.createdAt)}</span>
-            <span>${order.shippingType === "national" ? "Nacional" : "Local"}</span>
-            <strong>${currency.format(order.total)}</strong>
-          </div>
-          <p>${itemSummary}</p>
-        </article>
-      `;
-    })
-    .join("");
+  ordersList.innerHTML = state.orders.length
+    ? state.orders
+        .map(
+          (order) => `
+            <article class="order-card">
+              <strong>${order.id}</strong>
+              <span>${order.customer}</span>
+              <span>${order.shippingType === "national" ? "Nacional" : "Local"}</span>
+              <b>${currency.format(order.total)}</b>
+            </article>
+          `,
+        )
+        .join("")
+    : '<div class="empty-state">Los pedidos confirmados apareceran aqui.</div>';
 }
 
 function fillAccountForm() {
-  document.querySelector("#customerName").value = state.user?.name || "";
-  document.querySelector("#customerPhone").value = state.user?.phone || "";
-  document.querySelector("#customerEmail").value = state.user?.email || "";
-  document.querySelector("#customerPassword").value = state.user?.password || "";
-  document.querySelector("#customerAddress").value = state.user?.address || deliveryAddress.value || "";
+  $("#customerName").value = state.user?.name || "";
+  $("#customerPhone").value = state.user?.phone || "";
+  $("#customerEmail").value = state.user?.email || "";
+  $("#customerPassword").value = state.user?.password || "";
+  $("#customerAddress").value = state.user?.address || deliveryAddress.value || "";
 }
 
 function saveAccount() {
-  const user = {
-    name: document.querySelector("#customerName").value.trim(),
-    phone: document.querySelector("#customerPhone").value.trim(),
-    email: document.querySelector("#customerEmail").value.trim(),
-    password: document.querySelector("#customerPassword").value,
-    address: document.querySelector("#customerAddress").value.trim(),
+  state.user = {
+    name: $("#customerName").value.trim(),
+    phone: $("#customerPhone").value.trim(),
+    email: $("#customerEmail").value.trim(),
+    password: $("#customerPassword").value,
+    address: $("#customerAddress").value.trim(),
     shippingType: shippingType.value,
   };
-
-  state.user = user;
-  writeJSON(storageKeys.user, user);
-  deliveryAddress.value = user.address;
+  writeJSON(storageKeys.user, state.user);
+  deliveryAddress.value = state.user.address;
   renderSavedUser();
+  renderCustomers();
+  renderMetrics();
   accountDialog.close();
   showToast("Cuenta guardada");
 }
 
 function renderSavedUser() {
-  if (!state.user) {
-    savedUser.textContent = "";
-    return;
-  }
-
-  savedUser.textContent = `Sesión local: ${state.user.name} · ${state.user.email}`;
+  savedUser.textContent = state.user ? `Sesion local: ${state.user.name} - ${state.user.email}` : "";
 }
 
 function persistUserShipping() {
@@ -514,8 +511,7 @@ function defaultWelcomeMessage() {
 }
 
 function buildWelcomeMessage() {
-  const configured = welcomeMessage.value.trim() || defaultWelcomeMessage();
-  return configured.replaceAll("{{liga}}", marketplaceUrl.value.trim());
+  return (welcomeMessage.value.trim() || defaultWelcomeMessage()).replaceAll("{{liga}}", marketplaceUrl.value.trim());
 }
 
 function saveSettings() {
@@ -533,19 +529,15 @@ function saveCustomWelcome() {
 function buildWhatsAppOrderLink() {
   const phone = businessPhone.value.replace(/\D/g, "");
   const totals = calculateTotals();
-  const lines = state.cart.map((line) => {
-    const product = getProduct(line.productId);
-    return `- ${line.quantity} x ${product.name}`;
-  });
+  const lines = state.cart.map((line) => `- ${line.quantity} x ${getProduct(line.productId).name}`);
   const message = [
     "Hola, quiero confirmar este pedido de Mini Farmacia:",
     ...lines,
     `Entrega: ${shippingType.value === "national" ? "Nacional" : "Local"}`,
     `Pago: ${paymentMethod.value}`,
-    `Dirección: ${deliveryAddress.value || "Por confirmar"}`,
+    `Direccion: ${deliveryAddress.value || "Por confirmar"}`,
     `Total: ${currency.format(totals.total)}`,
   ].join("\n");
-
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
@@ -586,34 +578,16 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("visible");
   window.clearTimeout(showToast.timeout);
-  showToast.timeout = window.setTimeout(() => {
-    toast.classList.remove("visible");
-  }, 2200);
-}
-
-function formatDate(value) {
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  showToast.timeout = window.setTimeout(() => toast.classList.remove("visible"), 2200);
 }
 
 function timeNow() {
-  return new Intl.DateTimeFormat("es-MX", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date());
+  return new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" }).format(new Date());
 }
 
 function escapeHTML(value) {
   return value.replace(/[&<>"']/g, (char) => {
-    const entities = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    };
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
     return entities[char];
   });
 }
