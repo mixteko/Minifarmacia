@@ -1,19 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
 :root {
   color-scheme: light;
-  --ink: #111827;
+  --ink: #101322;
   --muted: #667085;
-  --line: #e6e9f2;
+  --line: #e7e9f4;
   --panel: #ffffff;
-  --page: #f6f8ff;
+  --page: #f7f8ff;
   --red: #ef0b36;
-  --pink: #ff2f9a;
-  --blue: #1648ff;
-  --cyan: #22c7b8;
-  --violet: #7c3cff;
+  --pink: #ff2bbf;
+  --blue: #0057ff;
+  --cyan: #00d6c9;
+  --violet: #6c2cff;
   --green: #119c68;
   --amber: #c47a00;
   --danger: #c92a42;
-  --shadow: 0 18px 42px rgba(24, 32, 46, 0.1);
+  --shadow: 0 20px 48px rgba(22, 25, 45, 0.12);
 }
 
 * {
@@ -28,11 +30,12 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at 24% -10%, rgba(34, 199, 184, 0.18), transparent 30%),
-    radial-gradient(circle at 100% 0%, rgba(255, 47, 154, 0.12), transparent 28%),
+    radial-gradient(circle at 20% -8%, rgba(0, 214, 201, 0.22), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(255, 43, 191, 0.16), transparent 30%),
+    linear-gradient(180deg, #fbfcff 0%, #f3f5ff 100%),
     var(--page);
   font-family:
-    "Space Grotesk", Inter, Sora, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    Outfit, "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   text-rendering: geometricPrecision;
 }
@@ -89,9 +92,9 @@ button:disabled {
   padding: 5px 11px;
   border-radius: 999px;
   color: #fff;
-  background: linear-gradient(135deg, var(--blue), var(--pink));
+  background: linear-gradient(135deg, #101322, var(--blue) 48%, var(--pink));
   font-size: 0.74rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -142,8 +145,8 @@ button:disabled {
 
 .nav-item.active,
 .nav-item:hover {
-  color: var(--blue);
-  background: linear-gradient(135deg, rgba(22, 72, 255, 0.1), rgba(34, 199, 184, 0.12));
+  color: #07122f;
+  background: linear-gradient(135deg, rgba(0, 87, 255, 0.13), rgba(255, 43, 191, 0.11));
   transform: translateX(2px);
 }
 
@@ -159,7 +162,7 @@ button:disabled {
   place-items: center;
   border-radius: 7px;
   color: #fff;
-  background: linear-gradient(135deg, var(--blue), var(--violet));
+  background: linear-gradient(135deg, var(--blue), var(--pink));
   font-size: 0.78rem;
 }
 
@@ -200,10 +203,10 @@ button:disabled {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--blue);
+  color: var(--pink);
   font-size: 0.72rem;
   font-weight: 950;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -221,15 +224,15 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.05rem, 3.6vw, 3.25rem);
-  line-height: 0.96;
+  font-size: clamp(2.35rem, 4.2vw, 4rem);
+  line-height: 0.9;
   font-weight: 950;
 }
 
 h2 {
-  font-size: clamp(1.35rem, 2.2vw, 2.05rem);
-  line-height: 1.04;
-  font-weight: 900;
+  font-size: clamp(1.45rem, 2.5vw, 2.35rem);
+  line-height: 0.98;
+  font-weight: 950;
 }
 
 h3 {
@@ -254,8 +257,8 @@ h3 {
 .primary-button {
   border: 0;
   color: #fff;
-  background: linear-gradient(135deg, var(--blue), var(--pink));
-  box-shadow: 0 12px 24px rgba(22, 72, 255, 0.18);
+  background: linear-gradient(135deg, #101322, var(--blue) 45%, var(--pink));
+  box-shadow: 0 14px 28px rgba(0, 87, 255, 0.22);
 }
 
 .primary-button:hover {
@@ -286,8 +289,8 @@ h3 {
 
 .status-pill {
   min-height: 30px;
-  color: #0f3fb5;
-  background: linear-gradient(135deg, #eef2ff, #dcfff9);
+  color: #07122f;
+  background: linear-gradient(135deg, rgba(0, 214, 201, 0.22), rgba(255, 43, 191, 0.16));
   font-size: 0.78rem;
 }
 
@@ -360,8 +363,8 @@ label {
   display: block;
   margin: 12px 0 4px;
   color: var(--ink);
-  font-size: clamp(1.7rem, 3vw, 2.35rem);
-  line-height: 1;
+  font-size: clamp(1.95rem, 3.4vw, 2.8rem);
+  line-height: 0.92;
   font-weight: 950;
 }
 
@@ -772,7 +775,7 @@ td span {
   color: #fff;
   background:
     radial-gradient(circle at 88% 10%, rgba(255, 255, 255, 0.18), transparent 30%),
-    linear-gradient(135deg, #1648ff 0%, #7c3cff 42%, #ff2f9a 100%);
+    linear-gradient(135deg, #101322 0%, #0057ff 42%, #ff2bbf 100%);
 }
 
 .store-hero img {
@@ -832,7 +835,7 @@ td span {
   border-radius: 8px;
   background:
     radial-gradient(circle at 24% 30%, rgba(255, 255, 255, 0.9) 0 18px, transparent 19px),
-    linear-gradient(135deg, #1648ff, #22c7b8);
+    linear-gradient(135deg, #0057ff, #00d6c9);
   overflow: hidden;
 }
 
@@ -926,7 +929,7 @@ td span {
   padding: 12px 14px;
   border-radius: 8px;
   color: #fff;
-  background: linear-gradient(135deg, var(--blue), var(--violet));
+  background: linear-gradient(135deg, #101322, var(--blue), var(--pink));
   text-align: center;
   box-shadow: var(--shadow);
   opacity: 0;
