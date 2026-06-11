@@ -419,15 +419,25 @@
         <button class="ghost-button" type="submit">Cerrar</button>
       </form>
       <form class="account-form" id="storeCustomerForm">
-        <p class="eyebrow">Cuenta cliente</p>
-        <h2>Registro para tienda online</h2>
-        <label>Nombre <input id="storeRegisterName" type="text" required /></label>
-        <div class="form-row">
-          <label>Telefono <input id="storeRegisterPhone" type="tel" required /></label>
-          <label>Correo <input id="storeRegisterEmail" type="email" /></label>
+        <div class="account-intro">
+          <img src="assets/mini-farmacia-logo.svg" alt="Mini Farmacia" />
+          <p class="account-breadcrumb">Inicio · Mi cuenta · Crear cuenta</p>
+          <h2>Crear una cuenta</h2>
+          <p>Compra mas rapido y lleva el control de tus pedidos en un solo lugar.</p>
         </div>
-        <label>Direccion <textarea id="storeRegisterAddress" rows="3" required></textarea></label>
-        <button class="primary-button" type="submit">Guardar cuenta</button>
+        <label>Nombre y apellido <input id="storeRegisterName" type="text" placeholder="ej. Maria Perez" required /></label>
+        <label>Correo electronico <input id="storeRegisterEmail" type="email" placeholder="ej. tuemail@email.com" required /></label>
+        <label>Telefono (opcional) <input id="storeRegisterPhone" type="tel" placeholder="ej. 5512341234" /></label>
+        <label>Contrasena <input id="storeRegisterPassword" type="password" placeholder="ej. tucontrasena" required /></label>
+        <label>Confirmar contrasena <input id="storeRegisterConfirmPassword" type="password" placeholder="ej. tucontrasena" required /></label>
+        <label>Direccion de entrega <textarea id="storeRegisterAddress" rows="3" placeholder="Calle, numero, colonia, ciudad"></textarea></label>
+        <label class="captcha-check">
+          <input id="storeRegisterRobot" type="checkbox" required />
+          <span>No soy un robot</span>
+          <small>Verificacion de cuenta</small>
+        </label>
+        <button class="primary-button store-register-button" type="submit">Crear cuenta</button>
+        <p class="account-login-link">Ya tienes una cuenta? <button type="button">Inicia sesion</button></p>
       </form>
     </dialog>
 

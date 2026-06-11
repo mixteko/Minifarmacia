@@ -194,7 +194,10 @@ const elements = {
   storeRegisterName: $("#storeRegisterName"),
   storeRegisterPhone: $("#storeRegisterPhone"),
   storeRegisterEmail: $("#storeRegisterEmail"),
+  storeRegisterPassword: $("#storeRegisterPassword"),
+  storeRegisterConfirmPassword: $("#storeRegisterConfirmPassword"),
   storeRegisterAddress: $("#storeRegisterAddress"),
+  storeRegisterRobot: $("#storeRegisterRobot"),
   customerForm: $("#customerForm"),
   customerFormTitle: $("#customerFormTitle"),
   customerId: $("#customerId"),
@@ -580,12 +583,17 @@ function createOnlineOrder(event) {
 
 function saveStoreCustomer(event) {
   event.preventDefault();
+  const password = elements.storeRegisterPassword.value.trim();
+  const confirmPassword = elements.storeRegisterConfirmPassword.value.trim();
+  if (password !== confirmPassword) return showToast("Las contrasenas no coinciden");
+  if (!elements.storeRegisterRobot.checked) return showToast("Confirma la verificacion de cuenta");
   const customer = {
     id: createId("cust"),
     name: elements.storeRegisterName.value.trim(),
     phone: elements.storeRegisterPhone.value.trim(),
     email: elements.storeRegisterEmail.value.trim(),
     address: elements.storeRegisterAddress.value.trim(),
+    account: true,
     createdAt: new Date().toISOString(),
   };
   state.customers.unshift(customer);

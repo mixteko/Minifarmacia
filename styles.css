@@ -13,6 +13,8 @@
   --red: #f31616;
   --pink: #df356d;
   --blue: #073bff;
+  --store-button: #61a8dc;
+  --store-button-dark: #4d98cf;
   --cyan: #16a6d9;
   --violet: #3546c8;
   --green: #119c68;
@@ -820,6 +822,19 @@ td span {
   line-height: 1.55;
 }
 
+.store-hero .primary-button,
+.store-cart .primary-button,
+.product-actions .primary-button {
+  background: var(--store-button);
+  box-shadow: none;
+}
+
+.store-hero .primary-button:hover,
+.store-cart .primary-button:hover,
+.product-actions .primary-button:hover {
+  background: var(--store-button-dark);
+}
+
 .store-toolbar,
 .store-layout {
   display: grid;
@@ -938,7 +953,7 @@ td span {
 }
 
 .account-dialog {
-  width: min(620px, calc(100vw - 28px));
+  width: min(560px, calc(100vw - 28px));
   border: 0;
   border-radius: 8px;
   padding: 0;
@@ -951,15 +966,119 @@ td span {
 
 .dialog-close-form {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   margin: 0;
 }
 
 .account-form {
   display: grid;
-  gap: 14px;
-  padding: 28px;
+  gap: 16px;
+  padding: 34px clamp(22px, 5vw, 48px);
+  background: #fff;
+}
+
+.account-intro {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.account-intro img {
+  width: 124px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.account-intro h2 {
+  font-size: 1.28rem;
+}
+
+.account-intro p {
+  margin: 0;
+  color: #3f4756;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.account-breadcrumb {
+  color: var(--muted) !important;
+  font-size: 0.72rem !important;
+}
+
+.account-form input,
+.account-form textarea {
+  min-height: 40px;
+  border-color: #c9cdd5;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.account-form input::placeholder,
+.account-form textarea::placeholder {
+  color: #b8bec8;
+}
+
+.captcha-check {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px 12px;
+  width: min(300px, 100%);
+  min-height: 76px;
+  margin: 2px auto 4px;
+  padding: 12px;
+  border: 1px solid #d4d7dd;
+  background: #fafafa;
+  color: var(--ink);
+}
+
+.captcha-check input {
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  accent-color: var(--store-button);
+}
+
+.captcha-check span {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.captcha-check small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.store-register-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  background: var(--store-button);
+  box-shadow: none;
+}
+
+.store-register-button:hover {
+  background: var(--store-button-dark);
+}
+
+.account-login-link {
+  margin: -2px 0 0;
+  color: #3f4756;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.account-login-link button {
+  border: 0;
+  padding: 0;
+  color: #2b5f96;
+  background: transparent;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .toast {
