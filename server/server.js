@@ -96,6 +96,7 @@ async function handleIncomingWebhook(request, response) {
     const messages = extractIncomingMessages(body);
 
     for (const message of messages) {
+      console.log("WEBHOOK NUMERO RECIBIDO:", message.from);
       const reply = buildChatbotReply(message.text);
       if (reply) {
         try {
@@ -181,7 +182,9 @@ async function sendWhatsAppMessage(telefono, mensaje) {
 
   const destination = cleanPhone(telefono);
   const graphUrl = `https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`;
+  console.log("WHATSAPP NUMERO RECIBIDO:", telefono);
   console.log("WHATSAPP DESTINO:", destination);
+  console.log("WHATSAPP MENSAJE:", mensaje);
   console.log("WHATSAPP GRAPH URL:", graphUrl);
 
   const whatsappResponse = await fetch(graphUrl, {
