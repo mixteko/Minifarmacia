@@ -258,7 +258,9 @@ function readJSONBody(request) {
 }
 
 function cleanPhone(phone) {
-  return String(phone).replace(/\D/g, "");
+  const digits = String(phone).replace(/\D/g, "");
+  if (digits.startsWith("521") && digits.length === 13) return `52${digits.slice(-10)}`;
+  return digits;
 }
 
 function setCorsHeaders(response) {
