@@ -277,22 +277,37 @@
                 <button class="ghost-button" type="button" id="clearProductForm">Limpiar</button>
               </div>
               <input id="productId" type="hidden" />
+              <label>SKU <input id="productSku" type="text" required /></label>
               <label>Nombre <input id="productName" type="text" required /></label>
               <label>Categoria <input id="productCategory" type="text" required /></label>
+              <label>Sustancia / slug <input id="productSubstance" type="text" /></label>
+              <label>Link imagen <input id="productImageUrl" type="url" /></label>
               <div class="form-row">
-                <label>Precio <input id="productPrice" type="number" min="0" step="0.01" required /></label>
+                <label>Costo <input id="productCost" type="number" min="0" step="0.01" /></label>
+                <label>Precio lista <input id="productRegularPrice" type="number" min="0" step="0.01" /></label>
+              </div>
+              <div class="form-row">
+                <label>Precio con descuento <input id="productPrice" type="number" min="0" step="0.01" required /></label>
                 <label>Stock <input id="productStock" type="number" min="0" step="1" required /></label>
               </div>
               <div class="form-row">
                 <label>Stock minimo <input id="productMinStock" type="number" min="0" step="1" required /></label>
                 <label>Stock maximo <input id="productMaxStock" type="number" min="0" step="1" required /></label>
               </div>
+              <label>Caducidad <input id="productExpiresAt" type="date" /></label>
               <div class="form-row">
                 <label>
                   Tipo
                   <select id="productType">
                     <option value="Venta libre">Venta libre</option>
                     <option value="Receta medica">Receta medica</option>
+                  </select>
+                </label>
+                <label>
+                  IVA
+                  <select id="productIva">
+                    <option value="No">No</option>
+                    <option value="Si">Si</option>
                   </select>
                 </label>
                 <label>
