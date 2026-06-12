@@ -10,6 +10,7 @@ loadEnv();
 const PORT = Number(process.env.PORT || 3000);
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "mini_farmacia_webhook_2026";
 
 const server = createServer(async (request, response) => {
   setCorsHeaders(response);
@@ -17,6 +18,21 @@ const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
     response.writeHead(204);
     response.end();
+    return;
+  }
+
+  if (request.method === "GET" && request.url === "/") {
+    sendJSON(response, 200, { ok: true, service: "Mini Farmacia WhatsApp API" });
+    return;
+  }
+
+  if (request.method === "GET" && request.url.startsWith("/webhook")) {
+    handleWebhookVerification(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && request.url === "/webhook") {
+    await handleIncomingWebhook(request, response);
     return;
   }
 
@@ -51,37 +67,130 @@ async function handleSendWhatsApp(request, response) {
       return;
     }
 
-    const whatsappResponse = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: cleanPhone(telefono),
-        type: "text",
-        text: {
-          preview_url: true,
-          body: mensaje,
-        },
-      }),
-    });
-
-    const data = await whatsappResponse.json();
-
-    if (!whatsappResponse.ok) {
-      sendJSON(response, whatsappResponse.status, {
-        error: "No se pudo enviar el mensaje de WhatsApp",
-        details: data,
-      });
-      return;
-    }
-
+    const data = await sendWhatsAppMessage(telefono, mensaje);
     sendJSON(response, 200, { ok: true, data });
   } catch (error) {
     sendJSON(response, 500, { error: "Error interno del servidor", details: error.message });
   }
+}
+
+function handleWebhookVerification(request, response) {
+  const url = new URL(request.url, `http://${request.headers.host}`);
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    response.writeHead(200, { "Content-Type": "text/plain" });
+    response.end(challenge || "");
+    return;
+  }
+
+  sendJSON(response, 403, { error: "Token de verificacion invalido" });
+}
+
+async function handleIncomingWebhook(request, response) {
+  try {
+    const body = await readJSONBody(request);
+    const messages = extractIncomingMessages(body);
+
+    for (const message of messages) {
+      const reply = buildChatbotReply(message.text);
+      if (reply) await sendWhatsAppMessage(message.from, reply);
+    }
+
+    sendJSON(response, 200, { ok: true });
+  } catch (error) {
+    sendJSON(response, 500, { error: "Error al procesar webhook", details: error.message });
+  }
+}
+
+function extractIncomingMessages(body) {
+  const entries = Array.isArray(body.entry) ? body.entry : [];
+
+  return entries.flatMap((entry) => {
+    const changes = Array.isArray(entry.changes) ? entry.changes : [];
+
+    return changes.flatMap((change) => {
+      const messages = Array.isArray(change.value?.messages) ? change.value.messages : [];
+
+      return messages
+        .filter((message) => message.from && message.text?.body)
+        .map((message) => ({
+          from: message.from,
+          text: message.text.body,
+        }));
+    });
+  });
+}
+
+function buildChatbotReply(text) {
+  const normalizedText = normalizeText(text);
+
+  if (normalizedText.includes("hola")) {
+    return "Hola, gracias por escribir a Mini Farmacia. Puedes preguntar por horario, ubicacion, medicamento, pedido o escribir humano para atencion personalizada.";
+  }
+
+  if (normalizedText.includes("horario")) {
+    return "Nuestro horario de atencion es de lunes a sabado de 9:00 AM a 7:00 PM.";
+  }
+
+  if (normalizedText.includes("ubicacion")) {
+    return "Estamos en Monterrey, Nuevo Leon. Comparte tu zona y te ayudamos con entrega local o nacional.";
+  }
+
+  if (normalizedText.includes("medicamento")) {
+    return "Claro. Escribenos el nombre del medicamento, presentacion y cantidad que necesitas para revisar disponibilidad.";
+  }
+
+  if (normalizedText.includes("pedido")) {
+    return "Para revisar tu pedido, compartenos tu nombre completo y numero de pedido.";
+  }
+
+  if (normalizedText.includes("humano")) {
+    return "Un asesor de Mini Farmacia revisara tu mensaje y te respondera lo antes posible.";
+  }
+
+  return "Gracias por escribir a Mini Farmacia. Por ahora puedo ayudarte con: horario, ubicacion, medicamento, pedido o humano.";
+}
+
+function normalizeText(text) {
+  return String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+async function sendWhatsAppMessage(telefono, mensaje) {
+  if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+    throw new Error("Credenciales de WhatsApp no configuradas");
+  }
+
+  const whatsappResponse = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: cleanPhone(telefono),
+      type: "text",
+      text: {
+        preview_url: true,
+        body: mensaje,
+      },
+    }),
+  });
+
+  const data = await whatsappResponse.json();
+
+  if (!whatsappResponse.ok) {
+    throw new Error(data.error?.message || "No se pudo enviar el mensaje de WhatsApp");
+  }
+
+  return data;
 }
 
 function loadEnv() {
