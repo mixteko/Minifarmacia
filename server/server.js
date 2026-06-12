@@ -179,7 +179,12 @@ async function sendWhatsAppMessage(telefono, mensaje) {
     throw new Error("Credenciales de WhatsApp no configuradas");
   }
 
-  const whatsappResponse = await fetch(`https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`, {
+  const destination = cleanPhone(telefono);
+  const graphUrl = `https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`;
+  console.log("WHATSAPP DESTINO:", destination);
+  console.log("WHATSAPP GRAPH URL:", graphUrl);
+
+  const whatsappResponse = await fetch(graphUrl, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${WHATSAPP_TOKEN}`,
@@ -187,7 +192,7 @@ async function sendWhatsAppMessage(telefono, mensaje) {
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
-      to: cleanPhone(telefono),
+      to: destination,
       type: "text",
       text: {
         preview_url: true,
@@ -197,8 +202,10 @@ async function sendWhatsAppMessage(telefono, mensaje) {
   });
 
   const data = await whatsappResponse.json();
+  console.log("WHATSAPP STATUS:", whatsappResponse.status);
 
   if (!whatsappResponse.ok) {
+    console.error("WHATSAPP META ERROR:", JSON.stringify(data, null, 2));
     throw new Error(data.error?.message || "No se pudo enviar el mensaje de WhatsApp");
   }
 
