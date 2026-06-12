@@ -11,6 +11,8 @@ const PORT = Number(process.env.PORT || 3000);
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "mini_farmacia_webhook_2026";
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const AI_ENABLED = process.env.AI_ENABLED === "true";
 
 const server = createServer(async (request, response) => {
   console.log("REQUEST:", request.method, request.url);
@@ -97,7 +99,7 @@ async function handleIncomingWebhook(request, response) {
 
     for (const message of messages) {
       console.log("WEBHOOK NUMERO RECIBIDO:", message.from);
-      const reply = buildChatbotReply(message.text);
+      const reply = await buildChatbotReply(message.text);
       if (reply) {
         try {
           await sendWhatsAppMessage(message.from, reply);
@@ -137,11 +139,18 @@ function extractIncomingMessages(body) {
   });
 }
 
-function buildChatbotReply(text) {
+async function buildChatbotReply(text) {
+  const fixedReply = buildFixedReply(text);
+  if (fixedReply) return fixedReply;
+  if (AI_ENABLED) return await getDeepSeekReply(text);
+  return "Gracias por escribir a Mini Farmacia. Por ahora puedo ayudarte con: horario, ubicacion, pedido o asesor.";
+}
+
+function buildFixedReply(text) {
   const normalizedText = normalizeText(text);
 
   if (normalizedText.includes("hola")) {
-    return "Hola, gracias por escribir a Mini Farmacia. Puedes preguntar por horario, ubicacion, medicamento, pedido o escribir humano para atencion personalizada.";
+    return "Hola, gracias por escribir a Mini Farmacia. Puedes preguntar por horario, ubicacion, pedido o escribir asesor para atencion personalizada.";
   }
 
   if (normalizedText.includes("horario")) {
@@ -152,19 +161,59 @@ function buildChatbotReply(text) {
     return "Estamos en Monterrey, Nuevo Leon. Comparte tu zona y te ayudamos con entrega local o nacional.";
   }
 
-  if (normalizedText.includes("medicamento")) {
-    return "Claro. Escribenos el nombre del medicamento, presentacion y cantidad que necesitas para revisar disponibilidad.";
-  }
-
   if (normalizedText.includes("pedido")) {
     return "Para revisar tu pedido, compartenos tu nombre completo y numero de pedido.";
   }
 
-  if (normalizedText.includes("humano")) {
+  if (normalizedText.includes("asesor")) {
     return "Un asesor de Mini Farmacia revisara tu mensaje y te respondera lo antes posible.";
   }
 
-  return "Gracias por escribir a Mini Farmacia. Por ahora puedo ayudarte con: horario, ubicacion, medicamento, pedido o humano.";
+  return "";
+}
+
+async function getDeepSeekReply(text) {
+  if (!DEEPSEEK_API_KEY) {
+    return "Gracias por escribir a Mini Farmacia. Un asesor revisara tu mensaje lo antes posible.";
+  }
+
+  try {
+    const deepSeekResponse = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Eres el asistente de WhatsApp de Mini Farmacia en Mexico. Responde breve, amable y en espanol. No diagnostiques, no indiques dosis medicas y recomienda consultar a un profesional de salud cuando aplique. Si el cliente pide compra o disponibilidad, solicita nombre del medicamento, presentacion y cantidad.",
+          },
+          {
+            role: "user",
+            content: text,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 180,
+      }),
+    });
+
+    const data = await deepSeekResponse.json();
+
+    if (!deepSeekResponse.ok) {
+      console.error("DEEPSEEK ERROR:", JSON.stringify(data, null, 2));
+      return "Gracias por escribir a Mini Farmacia. Un asesor revisara tu mensaje lo antes posible.";
+    }
+
+    return data.choices?.[0]?.message?.content?.trim() || "Gracias por escribir a Mini Farmacia. Un asesor revisara tu mensaje lo antes posible.";
+  } catch (error) {
+    console.error("DEEPSEEK REQUEST ERROR:", error.message);
+    return "Gracias por escribir a Mini Farmacia. Un asesor revisara tu mensaje lo antes posible.";
+  }
 }
 
 function normalizeText(text) {
