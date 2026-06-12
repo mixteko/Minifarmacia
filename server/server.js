@@ -31,7 +31,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === "POST" && request.url === "/webhook") {
+  if (request.method === "POST" && isWebhookPath(request.url)) {
     await handleIncomingWebhook(request, response);
     return;
   }
@@ -96,13 +96,24 @@ async function handleIncomingWebhook(request, response) {
 
     for (const message of messages) {
       const reply = buildChatbotReply(message.text);
-      if (reply) await sendWhatsAppMessage(message.from, reply);
+      if (reply) {
+        try {
+          await sendWhatsAppMessage(message.from, reply);
+        } catch (error) {
+          console.error("No se pudo enviar respuesta automatica:", error.message);
+        }
+      }
     }
 
     sendJSON(response, 200, { ok: true });
   } catch (error) {
     sendJSON(response, 500, { error: "Error al procesar webhook", details: error.message });
   }
+}
+
+function isWebhookPath(url) {
+  const path = url.split("?")[0];
+  return path === "/webhook" || path === "/webhook/";
 }
 
 function extractIncomingMessages(body) {
