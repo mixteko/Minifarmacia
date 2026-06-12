@@ -4512,13 +4512,14 @@ function seedChat() {
   addBubble("business", buildWelcomeMessage());
 }
 
-function simulateIncomingMessage(event) {
+async function simulateIncomingMessage(event) {
   event.preventDefault();
   const message = elements.incomingMessage.value.trim();
   if (!message) return;
 
+  const responseMessage = buildWelcomeMessage();
   addBubble("customer", message);
-  addBubble("business", buildWelcomeMessage());
+  addBubble("business", responseMessage);
   state.conversations.unshift({
     id: createId("conv"),
     customerName: "Cliente WhatsApp",
@@ -4530,6 +4531,13 @@ function simulateIncomingMessage(event) {
   persist(storageKeys.conversations, state.conversations);
   elements.incomingMessage.value = "";
   renderConversations();
+
+  try {
+    await sendWhatsApp(elements.businessPhone.value, responseMessage);
+    showToast("Mensaje enviado por WhatsApp");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 function addBubble(type, message) {
@@ -4547,6 +4555,18 @@ function buildWelcomeMessage() {
 async function copyWelcomeMessage() {
   await navigator.clipboard.writeText(buildWelcomeMessage());
   showToast("Respuesta copiada");
+}
+
+async function sendWhatsApp(telefono, mensaje) {
+  const response = await fetch("/api/send-whatsapp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telefono, mensaje }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "No se pudo enviar WhatsApp");
+  return data;
 }
 
 function saveSettings() {
