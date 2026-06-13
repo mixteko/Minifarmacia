@@ -15,6 +15,7 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const AI_ENABLED = process.env.AI_ENABLED === "true";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const productSearchContexts = new Map();
 
 const server = createServer(async (request, response) => {
   console.log("REQUEST:", request.method, request.url);
@@ -266,7 +267,7 @@ async function buildChatbotReply(text, from) {
   const botConfig = await loadBotConfig();
   const fixedReply = await buildFixedReply(text, from, botConfig);
   if (fixedReply) return fixedReply;
-  const productReply = await buildProductReply(text);
+  const productReply = await buildProductReply(text, from);
   if (productReply) return productReply;
   if (AI_ENABLED) {
     console.log("IA ACTIVADA");
@@ -293,7 +294,7 @@ async function buildFixedReply(text, from, botConfig) {
     return negocio.direccion || sinDato;
   }
 
-  if (normalizedText.includes("medicamento")) {
+  if (normalizedText === "medicamento" || normalizedText === "medicamentos") {
     return respuestas.medicamento || sinDato;
   }
 
@@ -327,10 +328,22 @@ async function sendAdminAlerts(botConfig, from, text) {
   }
 }
 
-async function buildProductReply(text) {
+async function buildProductReply(text, from) {
+  const contextKey = cleanPhone(from);
+  const previousProducts = productSearchContexts.get(contextKey) || [];
+
+  if (isPreviousProductReference(text) || isPriceFollowUp(text)) {
+    if (!previousProducts.length) return "¿Me puedes escribir el nombre del producto que deseas consultar?";
+    return formatProductReply(previousProducts, { fromContext: true });
+  }
+
   const products = await searchProductsByMessage(text);
   if (!products.length) return "";
+  productSearchContexts.set(contextKey, products);
+  return formatProductReply(products);
+}
 
+function formatProductReply(products, options = {}) {
   const productLines = products.map((product, index) => {
     const stock = Number(product.stock || 0);
     const prefix = products.length > 1 ? `${index + 1}. ` : "";
@@ -340,7 +353,11 @@ async function buildProductReply(text) {
   });
 
   const hasStock = products.some((product) => Number(product.stock || 0) > 0);
-  const footer = hasStock ? "\n\n¿Deseas que lo agregue a tu pedido?" : "";
+  const footer = products.length > 1 && !options.fromContext
+    ? "\n\n¿Cuál presentación desea?"
+    : hasStock
+      ? "\n\n¿Deseas que lo agregue a tu pedido?"
+      : "";
 
   return `Tenemos:\n${productLines.join("\n\n")}${footer}`;
 }
@@ -350,17 +367,46 @@ async function searchProductsByMessage(text) {
 
   const terms = getProductSearchTerms(text);
   if (!terms.length) return [];
+  const query = terms.join(" ");
 
   try {
-    const orFilter = terms.map((term) => `nombre.ilike.*${encodeSupabaseFilterValue(term)}*`).join(",");
-    const products = await supabaseRequest(
-      `/rest/v1/productos?select=id,nombre,precio,stock,codigo_barras,activo&activo=eq.true&or=(${orFilter})&order=nombre.asc&limit=5`,
+    const exactProducts = await supabaseRequest(
+      `/rest/v1/productos?select=id,nombre,descripcion,precio,stock,codigo_barras,activo&activo=eq.true&nombre=ilike.${encodeSupabaseFilterValue(query)}&order=nombre.asc&limit=5`,
     );
-    return Array.isArray(products) ? products : [];
+    if (exactProducts.length) return exactProducts.slice(0, 5);
+
+    const orFilter = terms
+      .flatMap((term) => [`nombre.ilike.*${encodeSupabaseFilterValue(term)}*`, `descripcion.ilike.*${encodeSupabaseFilterValue(term)}*`])
+      .join(",");
+    const candidates = await supabaseRequest(
+      `/rest/v1/productos?select=id,nombre,descripcion,precio,stock,codigo_barras,activo&activo=eq.true&or=(${orFilter})&order=nombre.asc&limit=25`,
+    );
+    return rankProductMatches(candidates, terms, query).slice(0, 5);
   } catch (error) {
     console.error("No se pudo consultar productos:", error.message);
     return [];
   }
+}
+
+function rankProductMatches(products, terms, query) {
+  return (Array.isArray(products) ? products : [])
+    .map((product) => {
+      const name = normalizeText(product.nombre || "");
+      const description = normalizeText(product.descripcion || "");
+      const searchable = `${name} ${description}`;
+      const matchedTerms = terms.filter((term) => searchable.includes(term));
+      if (!matchedTerms.length) return null;
+
+      let score = matchedTerms.length;
+      if (name === query) score += 10;
+      if (name.includes(query)) score += 5;
+      if (terms.every((term) => searchable.includes(term))) score += 3;
+
+      return { product, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || a.product.nombre.localeCompare(b.product.nombre))
+    .map((item) => item.product);
 }
 
 async function getProductsFromSupabase() {
@@ -499,14 +545,29 @@ function getProductSearchTerms(text) {
     "agregar",
     "alguna",
     "alguno",
+    "ambas",
+    "ambos",
     "cuanto",
+    "cuánto",
     "cuesta",
     "costo",
+    "dame",
+    "del",
+    "dos",
+    "ese",
+    "esa",
+    "esas",
+    "esos",
     "existencia",
     "generico",
+    "genérico",
     "gracias",
+    "hay",
+    "las",
+    "los",
     "medicamento",
     "medicina",
+    "para",
     "precio",
     "producto",
     "puedo",
@@ -527,6 +588,17 @@ function getProductSearchTerms(text) {
     .slice(0, 4);
 
   return [...new Set(tokens)];
+}
+
+function isPreviousProductReference(text) {
+  const normalized = normalizeText(text);
+  return /\b(las dos|los dos|ambas|ambos|esas dos|esos dos)\b/.test(normalized);
+}
+
+function isPriceFollowUp(text) {
+  const normalized = normalizeText(text);
+  const hasPriceIntent = /\b(precio|precios|costo|costos|cuanto|cuánto|cuesta|cuestan)\b/.test(normalized);
+  return hasPriceIntent && !getProductSearchTerms(text).length;
 }
 
 function encodeSupabaseFilterValue(value) {

@@ -735,6 +735,7 @@ td span {
 .phone-shell {
   display: grid;
   grid-template-rows: auto minmax(340px, 1fr) auto;
+  min-height: 0;
 }
 
 .whatsapp-status-bar {
@@ -896,7 +897,9 @@ td span {
 }
 
 .whatsapp-chat-panel {
-  min-height: 680px;
+  height: min(680px, calc(100vh - 190px));
+  min-height: 560px;
+  max-height: 680px;
 }
 
 .advisor-alert {
@@ -983,9 +986,11 @@ td span {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
   padding: 16px;
   background: #f6f8fb;
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .bubble {
@@ -1021,6 +1026,7 @@ td span {
   gap: 10px;
   padding: 12px;
   border-top: 1px solid var(--line);
+  background: #fff;
 }
 
 .note-box {
@@ -1738,7 +1744,8 @@ td span {
   }
 
   .whatsapp-chat-panel {
-    min-height: 620px;
+    height: min(620px, calc(100vh - 150px));
+    min-height: 520px;
   }
 
   .storefront {
