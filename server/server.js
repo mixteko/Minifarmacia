@@ -128,11 +128,11 @@ async function handleIncomingWebhook(request, response) {
     for (const message of messages) {
       console.log("WEBHOOK NUMERO RECIBIDO:", message.from);
       const record = await saveIncomingMessage(message);
-      const reply = await buildChatbotReply(message.text, message.from);
+      const reply = await buildChatbotReply(message.text, message.from, record);
       if (reply) {
-        await saveOutgoingMessage(record, reply);
+        await saveOutgoingMessage(record, replyText(reply), reply.conversationStatus);
         try {
-          await sendWhatsAppMessage(message.from, reply);
+          await sendWhatsAppReply(message.from, reply);
         } catch (error) {
           console.error("No se pudo enviar respuesta automatica:", error.message);
         }
@@ -253,18 +253,22 @@ function extractIncomingMessages(body) {
       const messages = Array.isArray(change.value?.messages) ? change.value.messages : [];
 
       return messages
-        .filter((message) => message.from && message.text?.body)
+        .filter((message) => message.from && (message.text?.body || message.interactive?.button_reply))
         .map((message) => ({
           id: message.id,
           from: message.from,
-          text: message.text.body,
+          text: message.text?.body || message.interactive?.button_reply?.id || message.interactive?.button_reply?.title || "",
+          buttonId: message.interactive?.button_reply?.id || "",
+          buttonTitle: message.interactive?.button_reply?.title || "",
         }));
     });
   });
 }
 
-async function buildChatbotReply(text, from) {
+async function buildChatbotReply(text, from, record) {
   const botConfig = await loadBotConfig();
+  const menuReply = await buildMenuReply(text, from, botConfig, record);
+  if (menuReply) return menuReply;
   const fixedReply = await buildFixedReply(text, from, botConfig);
   if (fixedReply) return fixedReply;
   const productReply = await buildProductReply(text, from);
@@ -274,6 +278,120 @@ async function buildChatbotReply(text, from) {
     return await getDeepSeekReply(text);
   }
   return "Gracias por escribir a Mini Farmacia. Por ahora puedo ayudarte con: horario, ubicacion, medicamento, pedido o asesor.";
+}
+
+async function buildMenuReply(text, from, botConfig, record) {
+  const normalizedText = normalizeText(text);
+
+  if (isMainMenuRequest(normalizedText)) return mainMenuMessage();
+  if (isEndChatRequest(normalizedText)) {
+    if (record?.conversacion?.id) await updateConversacion(record.conversacion.id, "Chat finalizado", "cerrado");
+    return {
+      text: "✅ Chat finalizado. Cuando necesites ayuda nuevamente, escribe 'hola' o 'menú'.",
+      conversationStatus: "cerrado",
+    };
+  }
+
+  if (normalizedText === "btn_consultar_producto" || normalizedText === "1") {
+    return followUpMessage("Escribe el nombre del medicamento o producto que deseas consultar.");
+  }
+
+  if (normalizedText === "2") {
+    return followUpMessage(await buildCategoriesReply());
+  }
+
+  if (normalizedText === "btn_hacer_pedido" || normalizedText === "3") {
+    return followUpMessage("Para levantar tu pedido, envíanos nombre, producto, cantidad y domicilio de entrega.");
+  }
+
+  if (normalizedText === "4") {
+    return followUpMessage(buildScheduleLocationReply(botConfig));
+  }
+
+  if (normalizedText === "btn_asesor_humano" || normalizedText === "5") {
+    await sendAdminAlerts(botConfig, from, text);
+    return followUpMessage("Te canalizo con un asesor humano. En breve te atenderemos.", "asesor humano");
+  }
+
+  if (normalizedText === "6") {
+    return followUpMessage("Compártenos tu número de pedido o teléfono para revisar el seguimiento.");
+  }
+
+  if (normalizedText === "7") {
+    return followUpMessage("Por ahora no hay promociones registradas.");
+  }
+
+  if (normalizedText === "btn_menu_principal") return mainMenuMessage();
+  if (normalizedText === "btn_terminar_chat") {
+    if (record?.conversacion?.id) await updateConversacion(record.conversacion.id, "Chat finalizado", "cerrado");
+    return {
+      text: "✅ Chat finalizado. Cuando necesites ayuda nuevamente, escribe 'hola' o 'menú'.",
+      conversationStatus: "cerrado",
+    };
+  }
+
+  return null;
+}
+
+function mainMenuMessage() {
+  return {
+    text:
+      "👋 ¡Hola! Bienvenido a Mini Farmacia.\n\n" +
+      "Soy tu asistente virtual.\n" +
+      "Puedo ayudarte con consultas rápidas, productos, precios, pedidos y atención personalizada.\n\n" +
+      "Selecciona una opción:\n\n" +
+      "1️⃣ Consultar medicamento o precio\n" +
+      "2️⃣ Ver productos disponibles\n" +
+      "3️⃣ Hacer pedido\n" +
+      "4️⃣ Horario y ubicación\n" +
+      "5️⃣ Hablar con asesor humano\n" +
+      "6️⃣ Seguimiento de pedido\n" +
+      "7️⃣ Promociones",
+    buttons: [
+      { id: "btn_consultar_producto", title: "Consultar producto" },
+      { id: "btn_hacer_pedido", title: "Hacer pedido" },
+      { id: "btn_asesor_humano", title: "Asesor humano" },
+    ],
+  };
+}
+
+function followUpMessage(text, conversationStatus) {
+  return {
+    text,
+    conversationStatus,
+    buttons: [
+      { id: "btn_menu_principal", title: "Ir al menú principal" },
+      { id: "btn_terminar_chat", title: "Terminar Chat" },
+    ],
+  };
+}
+
+function isMainMenuRequest(normalizedText) {
+  return ["hola", "inicio", "menu", "menú", "0", "volver", "regresar"].includes(normalizedText) || normalizedText.startsWith("hola ");
+}
+
+function isEndChatRequest(normalizedText) {
+  return ["terminar", "salir", "cerrar", "finalizar"].includes(normalizedText);
+}
+
+async function buildCategoriesReply() {
+  if (!isSupabaseEnabled()) return "Por ahora no pude consultar las categorías disponibles.";
+
+  try {
+    const categories = await supabaseRequest("/rest/v1/categorias?select=nombre&activo=eq.true&order=nombre.asc&limit=20");
+    if (!categories.length) return "Por ahora no hay categorías registradas.";
+    return `Categorías disponibles:\n${categories.map((category, index) => `${index + 1}. ${category.nombre}`).join("\n")}`;
+  } catch (error) {
+    console.error("No se pudieron consultar categorias:", error.message);
+    return "Por ahora no pude consultar las categorías disponibles.";
+  }
+}
+
+function buildScheduleLocationReply(botConfig) {
+  const negocio = botConfig.negocio || {};
+  const horario = negocio.horario || "Horario no disponible.";
+  const direccion = negocio.direccion || "Ubicación no disponible.";
+  return `Horario:\n${horario}\n\nUbicación:\n${direccion}`;
 }
 
 async function buildFixedReply(text, from, botConfig) {
@@ -334,13 +452,13 @@ async function buildProductReply(text, from) {
 
   if (isPreviousProductReference(text) || isPriceFollowUp(text)) {
     if (!previousProducts.length) return "¿Me puedes escribir el nombre del producto que deseas consultar?";
-    return formatProductReply(previousProducts, { fromContext: true });
+    return followUpMessage(formatProductReply(previousProducts, { fromContext: true }));
   }
 
   const products = await searchProductsByMessage(text);
   if (!products.length) return "";
   productSearchContexts.set(contextKey, products);
-  return formatProductReply(products);
+  return followUpMessage(formatProductReply(products));
 }
 
 function formatProductReply(products, options = {}) {
@@ -650,7 +768,7 @@ async function saveIncomingMessage(message) {
   }
 }
 
-async function saveOutgoingMessage(record, reply) {
+async function saveOutgoingMessage(record, reply, conversationStatus) {
   console.log("SUPABASE_URL configurado:", SUPABASE_URL ? "SI" : "NO");
   console.log("SUPABASE_SERVICE_ROLE_KEY configurado:", SUPABASE_SERVICE_ROLE_KEY ? "SI" : "NO");
   if (!record || !isSupabaseEnabled()) return;
@@ -664,7 +782,7 @@ async function saveOutgoingMessage(record, reply) {
       mensaje: reply,
       metadata: { origen: "bot" },
     });
-    await updateConversacion(record.conversacion.id, reply, record.conversacion.estado);
+    await updateConversacion(record.conversacion.id, reply, conversationStatus || record.conversacion.estado);
   } catch (error) {
     console.error("No se pudo guardar respuesta del bot:", error.message);
   }
@@ -945,6 +1063,68 @@ async function sendWhatsAppMessage(telefono, mensaje) {
   }
 
   return data;
+}
+
+async function sendWhatsAppReply(telefono, reply) {
+  if (typeof reply === "string") return await sendWhatsAppMessage(telefono, reply);
+  if (reply?.buttons?.length) return await sendWhatsAppButtonMessage(telefono, reply.text, reply.buttons);
+  return await sendWhatsAppMessage(telefono, replyText(reply));
+}
+
+async function sendWhatsAppButtonMessage(telefono, mensaje, buttons) {
+  if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+    throw new Error("Credenciales de WhatsApp no configuradas");
+  }
+
+  const destination = cleanPhone(telefono);
+  const graphUrl = `https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`;
+  console.log("WHATSAPP NUMERO RECIBIDO:", telefono);
+  console.log("WHATSAPP DESTINO:", destination);
+  console.log("WHATSAPP MENSAJE:", mensaje);
+  console.log("WHATSAPP GRAPH URL:", graphUrl);
+
+  const whatsappResponse = await fetch(graphUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: destination,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: {
+          text: mensaje,
+        },
+        action: {
+          buttons: buttons.slice(0, 3).map((button) => ({
+            type: "reply",
+            reply: {
+              id: button.id,
+              title: button.title,
+            },
+          })),
+        },
+      },
+    }),
+  });
+
+  const data = await whatsappResponse.json();
+  console.log("WHATSAPP STATUS:", whatsappResponse.status);
+
+  if (!whatsappResponse.ok) {
+    console.error("WHATSAPP META ERROR:", JSON.stringify(data, null, 2));
+    throw new Error(data.error?.message || "No se pudo enviar el mensaje interactivo de WhatsApp");
+  }
+
+  return data;
+}
+
+function replyText(reply) {
+  if (typeof reply === "string") return reply;
+  return reply?.text || "";
 }
 
 function loadEnv() {
