@@ -30,6 +30,7 @@ create table if not exists productos (
   precio numeric(12,2) not null default 0,
   stock integer not null default 0,
   codigo_barras text unique,
+  imagen_url text,
   presentacion text,
   laboratorio text,
   activo boolean not null default true,

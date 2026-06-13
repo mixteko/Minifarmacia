@@ -5264,7 +5264,7 @@ function renderProducts() {
             <tr>
               <td>
                 <div class="admin-product-cell">
-                  ${product.imageUrl ? `<img src="${escapeHTML(product.imageUrl)}" alt="" loading="lazy" />` : ""}
+                  ${productImageMarkup(product)}
                   <div>
                     <strong>${escapeHTML(product.name)}</strong>
                     <span>${escapeHTML(product.sku || "Sin SKU")} · ${escapeHTML(product.description)}</span>
@@ -5288,6 +5288,12 @@ function renderProducts() {
         })
         .join("")
     : tableEmpty(6, state.productLoadError || "No hay productos.");
+}
+
+function productImageMarkup(product) {
+  const initialsText = initials(product.name || "Producto");
+  if (!product.imageUrl) return `<div class="product-image-placeholder">${escapeHTML(initialsText)}</div>`;
+  return `<img src="${escapeHTML(product.imageUrl)}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'product-image-placeholder', textContent: '${escapeHTML(initialsText)}' }))" />`;
 }
 
 async function saveProduct(event) {

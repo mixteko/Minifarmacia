@@ -509,6 +509,19 @@ td span {
   background: #fff;
 }
 
+.product-image-placeholder {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .table-actions {
   gap: 8px;
   flex-wrap: wrap;
