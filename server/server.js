@@ -342,8 +342,15 @@ function mainMenuMessage() {
     text:
       "👋 ¡Hola! Bienvenido a Mini Farmacia.\n\n" +
       "Soy tu asistente virtual.\n" +
-      "Puedo ayudarte con productos, precios, pedidos y atención personalizada.\n\n" +
-      "Selecciona una opción:",
+      "Puedo ayudarte con consultas rápidas, productos, precios, pedidos y atención personalizada.\n\n" +
+      "Selecciona una opción:\n\n" +
+      "1️⃣ Consultar medicamento o precio\n" +
+      "2️⃣ Ver productos disponibles\n" +
+      "3️⃣ Hacer pedido\n" +
+      "4️⃣ Horario y ubicación\n" +
+      "5️⃣ Hablar con asesor humano\n" +
+      "6️⃣ Seguimiento de pedido\n" +
+      "7️⃣ Promociones",
     buttons: [
       { id: "consultar_producto", title: "Consultar producto" },
       { id: "hacer_pedido", title: "Hacer pedido" },
@@ -1113,12 +1120,12 @@ async function sendWhatsAppInteractiveButtons(telefono, mensaje, buttons) {
   });
 
   const data = await whatsappResponse.json();
-  console.log("WHATSAPP INTERACTIVE STATUS:", whatsappResponse.status);
-  console.log("WHATSAPP INTERACTIVE RESPONSE:", data);
+  console.log("INTERACTIVE STATUS:", whatsappResponse.status);
+  console.log("INTERACTIVE RESPONSE:", data);
 
   if (!whatsappResponse.ok) {
-    console.error("WHATSAPP INTERACTIVE ERROR:", JSON.stringify(data, null, 2));
-    throw new Error(data.error?.message || "No se pudo enviar el mensaje interactivo de WhatsApp");
+    console.error("INTERACTIVE ERROR:", JSON.stringify(data, null, 2));
+    return await sendWhatsAppMessage(telefono, mensaje);
   }
 
   return data;
