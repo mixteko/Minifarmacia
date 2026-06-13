@@ -169,6 +169,8 @@ async function buildChatbotReply(text, from) {
   const botConfig = await loadBotConfig();
   const fixedReply = await buildFixedReply(text, from, botConfig);
   if (fixedReply) return fixedReply;
+  const productReply = await buildProductReply(text);
+  if (productReply) return productReply;
   if (AI_ENABLED) {
     console.log("IA ACTIVADA");
     return await getDeepSeekReply(text);
@@ -226,6 +228,86 @@ async function sendAdminAlerts(botConfig, from, text) {
       console.error("No se pudo alertar al administrador:", admin, error.message);
     }
   }
+}
+
+async function buildProductReply(text) {
+  const products = await searchProductsByMessage(text);
+  if (!products.length) return "";
+
+  const productLines = products.map((product, index) => {
+    const stock = Number(product.stock || 0);
+    const prefix = products.length > 1 ? `${index + 1}. ` : "";
+    const availability = stock > 0 ? `Existencia: ${stock} piezas.` : "Actualmente no tenemos existencia.";
+
+    return `${prefix}${product.nombre}\nPrecio: $${formatPrice(product.precio)}\n${availability}`;
+  });
+
+  const hasStock = products.some((product) => Number(product.stock || 0) > 0);
+  const footer = hasStock ? "\n\n¿Deseas que lo agregue a tu pedido?" : "";
+
+  return `Tenemos:\n${productLines.join("\n\n")}${footer}`;
+}
+
+async function searchProductsByMessage(text) {
+  if (!isSupabaseEnabled()) return [];
+
+  const terms = getProductSearchTerms(text);
+  if (!terms.length) return [];
+
+  try {
+    const orFilter = terms.map((term) => `nombre.ilike.*${encodeSupabaseFilterValue(term)}*`).join(",");
+    const products = await supabaseRequest(
+      `/rest/v1/productos?select=id,nombre,precio,stock,codigo_barras,activo&activo=eq.true&or=(${orFilter})&order=nombre.asc&limit=5`,
+    );
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    console.error("No se pudo consultar productos:", error.message);
+    return [];
+  }
+}
+
+function getProductSearchTerms(text) {
+  const stopwords = new Set([
+    "agregar",
+    "alguna",
+    "alguno",
+    "cuanto",
+    "cuesta",
+    "costo",
+    "existencia",
+    "generico",
+    "gracias",
+    "medicamento",
+    "medicina",
+    "precio",
+    "producto",
+    "puedo",
+    "quiero",
+    "saber",
+    "tendra",
+    "tendran",
+    "tienen",
+    "tienes",
+    "venden",
+  ]);
+  const normalized = normalizeText(text).replace(/[^a-z0-9\s]/g, " ");
+  const tokens = normalized
+    .split(/\s+/)
+    .filter((token) => token.length >= 3)
+    .filter((token) => !stopwords.has(token))
+    .filter((token) => !/^\d+$/.test(token))
+    .slice(0, 4);
+
+  return [...new Set(tokens)];
+}
+
+function encodeSupabaseFilterValue(value) {
+  return encodeURIComponent(value).replace(/[()*,]/g, "");
+}
+
+function formatPrice(price) {
+  const amount = Number(price || 0);
+  return amount.toFixed(2);
 }
 
 async function saveIncomingMessage(message) {
