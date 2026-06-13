@@ -132,7 +132,7 @@ async function handleGetConversations(response) {
 
   try {
     const conversations = await supabaseRequest(
-      "/rest/v1/conversaciones?select=id,estado,ultimo_mensaje,ultimo_mensaje_at,created_at,clientes(id,nombre,telefono)&order=updated_at.desc&limit=50",
+      "/rest/v1/conversaciones?select=id,estado,ultimo_mensaje,ultimo_mensaje_at,created_at,clientes(id,nombre,telefono),mensajes(id,direccion,mensaje,created_at)&order=updated_at.desc&mensajes.order=created_at.asc&limit=50",
     );
     sendJSON(response, 200, { ok: true, conversations });
   } catch (error) {

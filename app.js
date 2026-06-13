@@ -4265,7 +4265,11 @@ const state = {
   storeQuery: "",
   storeCategory: "Todas",
   conversationQuery: "",
+  selectedConversationId: "",
+  usingRealConversations: false,
 };
+
+const conversationsApiUrl = "https://minifarmacia.onrender.com/api/conversations";
 
 const viewTitles = {
   dashboard: "Inicio",
@@ -4388,7 +4392,6 @@ function init() {
   syncProductCatalog();
   hydrateSettings();
   bindEvents();
-  seedChat();
   renderAll();
   loadServerConversations();
 }
@@ -4465,6 +4468,8 @@ function handleDocumentAction(event) {
   if (action.dataset.action === "mark-conversation-order") updateLatestConversation("Pedido");
   if (action.dataset.action === "mark-conversation-delivered") updateLatestConversation("Entregado");
   if (action.dataset.action === "send-store-link") sendStoreLinkToConversation();
+  if (action.dataset.action === "refresh-conversations") loadServerConversations();
+  if (action.dataset.action === "select-conversation") selectConversation(id);
 }
 
 function showView(viewId) {
@@ -4495,16 +4500,29 @@ function renderAll() {
 
 async function loadServerConversations() {
   try {
-    const response = await fetch("/api/conversations");
-    if (!response.ok) return;
+    const response = await fetch(conversationsApiUrl);
+    if (!response.ok) throw new Error("Backend no disponible");
 
     const data = await response.json();
-    if (!Array.isArray(data.conversations) || !data.conversations.length) return;
+    if (!Array.isArray(data.conversations)) throw new Error("Respuesta invalida");
 
     state.conversations = data.conversations.map(mapServerConversation);
+    state.usingRealConversations = true;
+    state.selectedConversationId = state.conversations[0]?.id || "";
+    if (!state.conversations.length) {
+      elements.chatLog.innerHTML = emptyState("Sin historial real.");
+    }
     renderConversations();
+    showToast("Conversaciones actualizadas");
   } catch {
-    // La app puede seguir operando con localStorage cuando el backend no esta disponible.
+    state.conversations = [];
+    state.usingRealConversations = false;
+    state.selectedConversationId = "";
+    elements.conversationList.innerHTML = emptyState("No se pudo cargar historial real");
+    elements.chatLog.innerHTML = emptyState("No se pudo cargar historial real");
+    renderConversationProfile(null);
+    renderAdvisorAlert(null);
+    showToast("No se pudo cargar historial real");
   }
 }
 
@@ -4517,6 +4535,16 @@ function mapServerConversation(conversation) {
     status: normalizeConversationStatus(conversation.estado),
     lastMessage: conversation.ultimo_mensaje || "Sin mensaje reciente",
     createdAt: conversation.ultimo_mensaje_at || conversation.created_at || new Date().toISOString(),
+    messages: (conversation.mensajes || []).map(mapServerMessage),
+  };
+}
+
+function mapServerMessage(message) {
+  return {
+    id: message.id,
+    type: message.direccion === "saliente" ? "business" : "customer",
+    message: message.mensaje,
+    createdAt: message.created_at,
   };
 }
 
@@ -4591,10 +4619,10 @@ async function simulateIncomingMessage(event) {
   }
 }
 
-function addBubble(type, message) {
+function addBubble(type, message, createdAt = new Date().toISOString()) {
   const node = document.createElement("div");
   node.className = `bubble ${type}`;
-  node.innerHTML = `${escapeHTML(message).replaceAll("\n", "<br>")}<time>${formatTime(new Date().toISOString())}</time>`;
+  node.innerHTML = `${escapeHTML(message).replaceAll("\n", "<br>")}<time>${formatTime(createdAt)}</time>`;
   elements.chatLog.appendChild(node);
   elements.chatLog.scrollTop = elements.chatLog.scrollHeight;
 }
@@ -4634,14 +4662,18 @@ function renderConversations() {
     const text = `${conversation.customerName} ${conversation.phone} ${conversation.lastMessage} ${conversation.status}`.toLowerCase();
     return text.includes(state.conversationQuery);
   });
-  const selected = conversations[0] || state.conversations[0];
+  const selected = conversations.find((conversation) => conversation.id === state.selectedConversationId) || conversations[0];
+  if (selected) state.selectedConversationId = selected.id;
 
-  elements.conversationList.innerHTML = conversations.length
-    ? conversations
+  elements.conversationList.innerHTML = `
+    <button class="ghost-button small refresh-conversations-button" type="button" data-action="refresh-conversations">Actualizar conversaciones</button>
+    ${
+      conversations.length
+        ? conversations
         .slice(0, 12)
         .map(
-          (conversation, index) => `
-            <article class="conversation-item ${index === 0 ? "active" : ""}">
+          (conversation) => `
+            <article class="conversation-item ${conversation.id === state.selectedConversationId ? "active" : ""}" data-action="select-conversation" data-id="${conversation.id}">
               <div class="conversation-avatar">${escapeHTML(initials(conversation.customerName))}</div>
               <div class="conversation-main">
                 <strong>${escapeHTML(conversation.customerName)}</strong>
@@ -4655,10 +4687,33 @@ function renderConversations() {
           `,
         )
         .join("")
-    : emptyState("Sin conversaciones.");
+        : emptyState(state.usingRealConversations ? "Sin historial real." : "No se pudo cargar historial real")
+    }
+  `;
 
   renderConversationProfile(selected);
+  renderConversationMessages(selected);
   renderAdvisorAlert(selected);
+}
+
+function selectConversation(id) {
+  state.selectedConversationId = id;
+  renderConversations();
+}
+
+function renderConversationMessages(conversation) {
+  elements.chatLog.innerHTML = "";
+  if (!conversation) {
+    elements.chatLog.innerHTML = emptyState(state.usingRealConversations ? "Sin historial real." : "No se pudo cargar historial real");
+    return;
+  }
+
+  if (!conversation.messages?.length) {
+    elements.chatLog.innerHTML = emptyState("Esta conversacion aun no tiene mensajes.");
+    return;
+  }
+
+  conversation.messages.forEach((message) => addBubble(message.type, message.message, message.createdAt));
 }
 
 function renderConversationProfile(conversation) {
@@ -4712,7 +4767,8 @@ function conversationStatusClass(status) {
 
 function updateLatestConversation(status) {
   if (!state.conversations.length) return showToast("Sin conversaciones");
-  state.conversations[0].status = status;
+  const conversation = state.conversations.find((item) => item.id === state.selectedConversationId) || state.conversations[0];
+  conversation.status = status;
   persist(storageKeys.conversations, state.conversations);
   renderConversations();
   showToast(`Conversacion marcada: ${status}`);

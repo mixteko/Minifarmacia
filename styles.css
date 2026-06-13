@@ -798,6 +798,11 @@ td span {
   overflow: auto;
 }
 
+.refresh-conversations-button {
+  width: 100%;
+  justify-content: center;
+}
+
 .conversation-item {
   display: grid;
   grid-template-columns: 38px 1fr;
